@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { tError } from '../i18n/errors.js';
 import { readFile, stat } from 'fs/promises';
 import * as React from 'react';
 import { useCallback, useEffect, useState } from 'react';
@@ -240,9 +241,9 @@ export function Feedback({
       setStep('done');
     } else {
       if (result.isZdrOrg) {
-        setError('Feedback collection is not available for organizations with custom data retention policies.');
+        setError(tError('error.feedbackZdrUnavailable'));
       } else {
-        setError('Could not submit feedback. Please try again later.');
+        setError(tError('error.feedbackSubmitFailed'));
       }
       // Stay on userInput step so user can retry with their content preserved
       setStep('userInput');

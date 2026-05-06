@@ -1,358 +1,219 @@
-<p align="center">
-  <img src="assets/screenshot.png" alt="free-code" width="720" />
-</p>
+# wtcc
 
-<h1 align="center">free-code</h1>
+> Claude Code 中文化 + 多 provider 兼容 + 自动 model 路由的开源 CLI
 
-<p align="center">
-  <strong>The free build of Claude Code.</strong><br>
-  All telemetry stripped. All guardrails removed. All experimental features unlocked.<br>
-  One binary, zero callbacks home.
-</p>
+[![npm version](https://img.shields.io/npm/v/wtcc.svg)](https://www.npmjs.com/package/wtcc)
+[![npm license](https://img.shields.io/npm/l/wtcc.svg)](./LICENSE)
+[![node](https://img.shields.io/node/v/wtcc.svg)](https://www.npmjs.com/package/wtcc)
+[![GitHub stars](https://img.shields.io/github/stars/UnstoppableCurry/free-code?style=social)](https://github.com/UnstoppableCurry/free-code)
+[![Runtime: Bun](https://img.shields.io/badge/runtime-bun-orange)](https://bun.sh)
 
-<p align="center">
-  <a href="#quick-install"><img src="https://img.shields.io/badge/install-one--liner-blue?style=flat-square" alt="Install" /></a>
-  <a href="https://github.com/paoloanzn/free-code/stargazers"><img src="https://img.shields.io/github/stars/paoloanzn/free-code?style=flat-square" alt="Stars" /></a>
-  <a href="https://github.com/paoloanzn/free-code/issues"><img src="https://img.shields.io/github/issues/paoloanzn/free-code?style=flat-square" alt="Issues" /></a>
-  <a href="https://github.com/paoloanzn/free-code/blob/main/FEATURES.md"><img src="https://img.shields.io/badge/features-88%20flags-orange?style=flat-square" alt="Feature Flags" /></a>
-  <a href="#ipfs-mirror"><img src="https://img.shields.io/badge/IPFS-mirrored-teal?style=flat-square" alt="IPFS" /></a>
-</p>
+`wtcc`（"WT Claude Code" 的缩写）是 **Claude Code 中文版** —— 在 [paoloanzn/free-code](https://github.com/paoloanzn/free-code)（一个可自行编译的 Claude Code 源码 fork）基础上做的中文本地化与多 provider 扩展。一句话定位：**一个 CLI 同时讲中文、同时调 Claude / GPT / Gemini / DeepSeek / Kimi / GLM / Qwen，并按 model 能力自动路由。**
 
----
+> 关键词（SEO）：Claude Code 中文版 · Claude Code Chinese fork · multi-provider AI CLI · OpenAI Anthropic relay CLI · self-hosted Claude Code · 自建 Claude Code · AI coding assistant 中文。
 
-## Quick Install
+## ✨ Highlights / 核心特性
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/paoloanzn/free-code/main/install.sh | bash
-```
-
-Checks your system, installs Bun if needed, clones the repo, builds with all experimental features enabled, and symlinks `free-code` on your PATH.
-
-Then run `free-code` and use the `/login` command to authenticate with your preferred model provider.
+- ✨ **中文 i18n**：banner、`/commands`、错误提示、日志全部中文化（`FREE_CODE_LANG=zh-CN`）
+- ✨ **多 provider 适配器**：一份 CLI 同时兼容 Anthropic、OpenAI、以及任意 OpenAI 兼容 relay（convertmodel.net 等）
+- ✨ **动态 `/model` 菜单**：从 runtime registry 实时拉取 model 列表，按 vendor 分组，不再写死
+- ✨ **per-model `/effort` schema**：每个 model 只暴露它真正支持的 effort 档位（`low | medium | high | max`）
+- ✨ **自愈式 OpenAI adapter**：自动修复孤儿 `tool_calls`、并发 `tool_calls`、上报真实 token usage
+- ✨ **`/why-this-model` 路由解释**：告诉你为什么这次请求被发到了这个 model
+- ✨ **Telemetry 全部移除**：继承自 free-code，无任何 OpenTelemetry / GrowthBook 回家请求
 
 ---
 
-## Table of Contents
+## 🚀 Quick Install / 快速安装
 
-- [What is this](#what-is-this)
-- [Model Providers](#model-providers)
-- [Quick Install](#quick-install)
-- [Requirements](#requirements)
-- [Build](#build)
-- [Usage](#usage)
-- [Experimental Features](#experimental-features)
-- [Project Structure](#project-structure)
-- [Tech Stack](#tech-stack)
-- [IPFS Mirror](#ipfs-mirror)
-- [Contributing](#contributing)
-- [License](#license)
-
----
-
-## What is this
-
-A clean, buildable fork of Anthropic's [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI -- the terminal-native AI coding agent. The upstream source became publicly available on March 31, 2026 through a source map exposure in the npm distribution.
-
-This fork applies three categories of changes on top of that snapshot:
-
-### Telemetry removed
-
-The upstream binary phones home through OpenTelemetry/gRPC, GrowthBook analytics, Sentry error reporting, and custom event logging. In this build:
-
-- All outbound telemetry endpoints are dead-code-eliminated or stubbed
-- GrowthBook feature flag evaluation still works locally (needed for runtime feature gates) but does not report back
-- No crash reports, no usage analytics, no session fingerprinting
-
-### Security-prompt guardrails removed
-
-Anthropic injects system-level instructions into every conversation that constrain Claude's behavior beyond what the model itself enforces. These include hardcoded refusal patterns, injected "cyber risk" instruction blocks, and managed-settings security overlays pushed from Anthropic's servers.
-
-This build strips those injections. The model's own safety training still applies -- this just removes the extra layer of prompt-level restrictions that the CLI wraps around it.
-
-### Experimental features unlocked
-
-Claude Code ships with 88 feature flags gated behind `bun:bundle` compile-time switches. Most are disabled in the public npm release. This build unlocks all 54 flags that compile cleanly. See [Experimental Features](#experimental-features) below, or refer to [FEATURES.md](FEATURES.md) for the full audit.
-
----
-
-## Model Providers
-
-free-code supports **five API providers** out of the box. Set the corresponding environment variable to switch providers -- no code changes needed.
-
-### Anthropic (Direct API) -- Default
-
-Use Anthropic's first-party API directly.
-
-| Model | ID |
-|---|---|
-| Claude Opus 4.6 | `claude-opus-4-6` |
-| Claude Sonnet 4.6 | `claude-sonnet-4-6` |
-| Claude Haiku 4.5 | `claude-haiku-4-5` |
-
-### OpenAI Codex
-
-Use OpenAI's Codex models for code generation. Requires a Codex subscription.
-
-| Model | ID |
-|---|---|
-| GPT-5.3 Codex (recommended) | `gpt-5.3-codex` |
-| GPT-5.4 | `gpt-5.4` |
-| GPT-5.4 Mini | `gpt-5.4-mini` |
+### 前置依赖：Bun ≥ 1.3
 
 ```bash
-export CLAUDE_CODE_USE_OPENAI=1
-free-code
-```
-
-### AWS Bedrock
-
-Route requests through your AWS account via Amazon Bedrock.
-
-```bash
-export CLAUDE_CODE_USE_BEDROCK=1
-export AWS_REGION="us-east-1"   # or AWS_DEFAULT_REGION
-free-code
-```
-
-Uses your standard AWS credentials (environment variables, `~/.aws/config`, or IAM role). Models are mapped to Bedrock ARN format automatically (e.g., `us.anthropic.claude-opus-4-6-v1`).
-
-| Variable | Purpose |
-|---|---|
-| `CLAUDE_CODE_USE_BEDROCK` | Enable Bedrock provider |
-| `AWS_REGION` / `AWS_DEFAULT_REGION` | AWS region (default: `us-east-1`) |
-| `ANTHROPIC_BEDROCK_BASE_URL` | Custom Bedrock endpoint |
-| `AWS_BEARER_TOKEN_BEDROCK` | Bearer token auth |
-| `CLAUDE_CODE_SKIP_BEDROCK_AUTH` | Skip auth (testing) |
-
-### Google Cloud Vertex AI
-
-Route requests through your GCP project via Vertex AI.
-
-```bash
-export CLAUDE_CODE_USE_VERTEX=1
-free-code
-```
-
-Uses Google Cloud Application Default Credentials (`gcloud auth application-default login`). Models are mapped to Vertex format automatically (e.g., `claude-opus-4-6@latest`).
-
-### Anthropic Foundry
-
-Use Anthropic Foundry for dedicated deployments.
-
-```bash
-export CLAUDE_CODE_USE_FOUNDRY=1
-export ANTHROPIC_FOUNDRY_API_KEY="..."
-free-code
-```
-
-Supports custom deployment IDs as model names.
-
-### Provider Selection Summary
-
-| Provider | Env Variable | Auth Method |
-|---|---|---|
-| Anthropic (default) | -- | `ANTHROPIC_API_KEY` or OAuth |
-| OpenAI Codex | `CLAUDE_CODE_USE_OPENAI=1` | OAuth via OpenAI |
-| AWS Bedrock | `CLAUDE_CODE_USE_BEDROCK=1` | AWS credentials |
-| Google Vertex AI | `CLAUDE_CODE_USE_VERTEX=1` | `gcloud` ADC |
-| Anthropic Foundry | `CLAUDE_CODE_USE_FOUNDRY=1` | `ANTHROPIC_FOUNDRY_API_KEY` |
-
----
-
-## Requirements
-
-- **Runtime**: [Bun](https://bun.sh) >= 1.3.11
-- **OS**: macOS or Linux (Windows via WSL)
-- **Auth**: An API key or OAuth login for your chosen provider
-
-```bash
-# Install Bun if you don't have it
 curl -fsSL https://bun.sh/install | bash
 ```
 
----
+（Windows 用户用 PowerShell：`powershell -c "irm bun.sh/install.ps1 | iex"`）
 
-## Build
+### 主推：从 npm 全局安装
 
 ```bash
-git clone https://github.com/paoloanzn/free-code.git
+npm install -g wtcc
+```
+
+> npm 安装的实际是一个 Node shim，shim 内部仍然调用 `bun` 运行编译后的 CLI，因此 Bun 必须先装好。
+
+### 备选 1：用 bun 安装
+
+```bash
+bun add -g wtcc
+```
+
+### 备选 2：从源码安装（开发者）
+
+```bash
+git clone https://github.com/UnstoppableCurry/free-code.git
 cd free-code
-bun build
-./cli
+bun install
+bun run build      # 产出 ./cli
+./wtcc-zh.sh       # 中文模式启动
 ```
 
-### Build Variants
+### 验证安装
 
-| Command | Output | Features | Description |
+```bash
+wtcc --help
+wtcc --version
+```
+
+看到帮助文本即安装成功。如果 `command not found`，确认 `npm bin -g` 或 `~/.bun/bin` 在 `PATH` 里。
+
+---
+
+## 🔐 Setup auth / 鉴权配置
+
+wtcc 支持三种鉴权路径，按优先级从高到低：
+
+### 1. Anthropic 官方 OAuth（A 社订阅用户）
+
+```bash
+wtcc /login
+```
+
+走浏览器 OAuth 流程，登录你的 Anthropic Max / Pro 账户，token 自动存到 `~/.claude/`。
+
+### 2. Relay key（推荐给中国大陆开发者）
+
+如果你用 [convertmodel.net](https://convertmodel.net) 这类 OpenAI 协议 relay：
+
+```bash
+export WTCC_RELAY_KEY="sk-relay-xxxxxxxx"
+./wtcc-zh.sh                # 自动设置 OPENAI_BASE_URL + 中文模式
+```
+
+或手动设置：
+
+```bash
+export FREE_CODE_MULTI_PROVIDER_NORMALIZED=1
+export CLAUDE_CODE_USE_OPENAI=1
+export OPENAI_BASE_URL="https://convertmodel.net"
+export OPENAI_API_KEY="sk-relay-xxxxxxxx"
+wtcc --model gpt-5.5
+```
+
+### 3. 切回原生 Anthropic（自备 API key）
+
+```bash
+unset CLAUDE_CODE_USE_OPENAI
+unset OPENAI_BASE_URL
+export ANTHROPIC_API_KEY="sk-ant-xxxxxxxx"
+wtcc --model claude-opus-4-7
+```
+
+> Tip：在 REPL 里随时输入 `/diagnose-relay` 可以打印当前 env flag + relay 可达性，4xx/5xx 时第一时间排查。
+
+---
+
+## 🎮 Slash commands / 斜杠命令
+
+| 命令 | 作用 |
+|---|---|
+| `/model` | 动态 model 菜单，按 vendor 分组 |
+| `/effort low\|medium\|high\|max` | 设置 reasoning effort（per-model schema 过滤） |
+| `/why-this-model` | 解释最近一次路由决策的原因 |
+| `/curry` | wtcc 专属助手（locale-aware） |
+| `/diagnose-relay` | 打印 relay 配置 + 连通性诊断 |
+| `/update` | 只读检查 npm 上是否有新版 wtcc |
+| `/cost` | 当前 session 的 token 成本明细 |
+| `/login` | OAuth 流程（Anthropic / OpenAI） |
+| `/version` | 当前构建版本 |
+| `/help` | 完整命令列表 |
+
+> `/upgrade` 是 **Anthropic Max plan 升级流程**，会打开 claude.ai —— 它 **不** 升级 wtcc 本身。升级 wtcc 用 `/update` 检查 + `npm i -g wtcc`。
+
+---
+
+## 🌍 Environment variables / 环境变量参考
+
+| 变量名 | 作用 |
+|---|---|
+| `ANTHROPIC_API_KEY` | Anthropic API key（默认 provider） |
+| `ANTHROPIC_AUTH_TOKEN` | 备选 auth token |
+| `ANTHROPIC_BASE_URL` | 覆盖 Anthropic 端点（接 relay 时用） |
+| `ANTHROPIC_MODEL` | 覆盖默认 model |
+| `OPENAI_API_KEY` | OpenAI key 或 relay key |
+| `OPENAI_BASE_URL` | 覆盖 OpenAI 端点 |
+| `CLAUDE_CODE_USE_OPENAI=1` | 强制走 OpenAI 协议路径 |
+| `FREE_CODE_MULTI_PROVIDER_NORMALIZED=1` | 启用 normalised 多 provider 路由 |
+| `FREE_CODE_LANG` | UI 语言：`zh-CN` / `en-US`（默认读 `LANG`） |
+| `WTCC_RELAY_KEY` | Relay 凭据（`wtcc-zh.sh` 读取，回退到 `FREE_CODE_RELAY_KEY` → `OPENAI_API_KEY`） |
+| `WTCC_OPENAI_FAST=1` | 提示 Codex 协议请求使用 `service_tier: "fast"` |
+| `CLAUDE_CODE_EFFORT_LEVEL` | 默认 effort 档位（`low\|medium\|high\|max`） |
+| `DISABLE_AUTOUPDATER=1` | 关闭上游 Claude Code 自带的 auto-updater |
+
+> `FREE_CODE_*` 前缀是历史 namespace，向后兼容保留。
+
+---
+
+## 🆚 Differences vs upstream / 与上游 free-code 的差异
+
+继承自 `paoloanzn/free-code` 的同时，wtcc 改了什么：
+
+| 维度 | upstream Claude Code | free-code | wtcc |
 |---|---|---|---|
-| `bun run build` | `./cli` | `VOICE_MODE` only | Production-like binary |
-| `bun run build:dev` | `./cli-dev` | `VOICE_MODE` only | Dev version stamp |
-| `bun run build:dev:full` | `./cli-dev` | All 54 experimental flags | Full unlock build |
-| `bun run compile` | `./dist/cli` | `VOICE_MODE` only | Alternative output path |
+| Provider | 仅 Anthropic | 仅 Anthropic | **多 provider，OpenAI 优先** |
+| 语言 | 英文 | 英文 | **中英双语**（`FREE_CODE_LANG`） |
+| Model 菜单 | 写死 | 写死 | **runtime registry 动态生成** |
+| `/effort` | 固定 schema | 固定 schema | **per-model schema** |
+| Telemetry | OTel + GrowthBook | 已剥离 | 已剥离 |
+| 源码 | 闭源（靠 source map 泄漏） | 开源可编译 | 开源可编译 + 中文化 |
 
-### Custom Feature Flags
+---
 
-Enable specific flags without the full bundle:
+## 🛠️ Build from source / 从源码构建
 
 ```bash
-# Enable just ultraplan and ultrathink
-bun run ./scripts/build.ts --feature=ULTRAPLAN --feature=ULTRATHINK
-
-# Add a flag on top of the dev build
-bun run ./scripts/build.ts --dev --feature=BRIDGE_MODE
+git clone https://github.com/UnstoppableCurry/free-code.git
+cd free-code
+bun install
+bun run build           # 产出 ./cli
+./cli                   # 直接跑
 ```
 
----
+构建变体：
 
-## Usage
-
-```bash
-# Interactive REPL (default)
-./cli
-
-# One-shot mode
-./cli -p "what files are in this directory?"
-
-# Specify a model
-./cli --model claude-opus-4-6
-
-# Run from source (slower startup)
-bun run dev
-
-# OAuth login
-./cli /login
-```
-
-### Environment Variables Reference
-
-| Variable | Purpose |
-|---|---|
-| `ANTHROPIC_API_KEY` | Anthropic API key |
-| `ANTHROPIC_AUTH_TOKEN` | Auth token (alternative) |
-| `ANTHROPIC_MODEL` | Override default model |
-| `ANTHROPIC_BASE_URL` | Custom API endpoint |
-| `ANTHROPIC_DEFAULT_OPUS_MODEL` | Custom Opus model ID |
-| `ANTHROPIC_DEFAULT_SONNET_MODEL` | Custom Sonnet model ID |
-| `ANTHROPIC_DEFAULT_HAIKU_MODEL` | Custom Haiku model ID |
-| `CLAUDE_CODE_OAUTH_TOKEN` | OAuth token via env |
-| `CLAUDE_CODE_API_KEY_HELPER_TTL_MS` | API key helper cache TTL |
+| 命令 | 输出 | 用途 |
+|---|---|---|
+| `bun run build` | `./cli` | 生产构建 |
+| `bun run build:dev` | `./cli-dev` | 开发版，带 dev 时间戳 |
+| `bun run build:dev:full` | `./cli-dev` | 打开所有实验 feature flag |
 
 ---
 
-## Experimental Features
+## 🗺️ Roadmap & Contributing
 
-The `bun run build:dev:full` build enables all 54 working feature flags. Highlights:
+- 路线图：见 [TODO.md](./TODO.md)
+- 贡献指南：见 [CONTRIBUTING.md](./CONTRIBUTING.md)（包含 i18n 翻译规则、PR 约定、dev 环境搭建）
+- Issue / PR：[github.com/UnstoppableCurry/free-code](https://github.com/UnstoppableCurry/free-code)
 
-### Interaction & UI
-
-| Flag | Description |
-|---|---|
-| `ULTRAPLAN` | Remote multi-agent planning on Claude Code web (Opus-class) |
-| `ULTRATHINK` | Deep thinking mode -- type "ultrathink" to boost reasoning effort |
-| `VOICE_MODE` | Push-to-talk voice input and dictation |
-| `TOKEN_BUDGET` | Token budget tracking and usage warnings |
-| `HISTORY_PICKER` | Interactive prompt history picker |
-| `MESSAGE_ACTIONS` | Message action entrypoints in the UI |
-| `QUICK_SEARCH` | Prompt quick-search |
-| `SHOT_STATS` | Shot-distribution stats |
-
-### Agents, Memory & Planning
-
-| Flag | Description |
-|---|---|
-| `BUILTIN_EXPLORE_PLAN_AGENTS` | Built-in explore/plan agent presets |
-| `VERIFICATION_AGENT` | Verification agent for task validation |
-| `AGENT_TRIGGERS` | Local cron/trigger tools for background automation |
-| `AGENT_TRIGGERS_REMOTE` | Remote trigger tool path |
-| `EXTRACT_MEMORIES` | Post-query automatic memory extraction |
-| `COMPACTION_REMINDERS` | Smart reminders around context compaction |
-| `CACHED_MICROCOMPACT` | Cached microcompact state through query flows |
-| `TEAMMEM` | Team-memory files and watcher hooks |
-
-### Tools & Infrastructure
-
-| Flag | Description |
-|---|---|
-| `BRIDGE_MODE` | IDE remote-control bridge (VS Code, JetBrains) |
-| `BASH_CLASSIFIER` | Classifier-assisted bash permission decisions |
-| `PROMPT_CACHE_BREAK_DETECTION` | Cache-break detection in compaction/query flow |
-
-See [FEATURES.md](FEATURES.md) for the complete audit of all 88 flags, including 34 broken flags with reconstruction notes.
+欢迎 self-hosted Claude Code 场景下的实战反馈：哪个 relay 不能用、哪个 model 路由错了、哪段中文翻得别扭，都开 issue。
 
 ---
 
-## Project Structure
+## 📜 License
 
-```
-scripts/
-  build.ts                # Build script with feature flag system
-
-src/
-  entrypoints/cli.tsx     # CLI entrypoint
-  commands.ts             # Command registry (slash commands)
-  tools.ts                # Tool registry (agent tools)
-  QueryEngine.ts          # LLM query engine
-  screens/REPL.tsx        # Main interactive UI (Ink/React)
-
-  commands/               # /slash command implementations
-  tools/                  # Agent tool implementations (Bash, Read, Edit, etc.)
-  components/             # Ink/React terminal UI components
-  hooks/                  # React hooks
-  services/               # API clients, MCP, OAuth, analytics
-    api/                  # API client + Codex fetch adapter
-    oauth/                # OAuth flows (Anthropic + OpenAI)
-  state/                  # App state store
-  utils/                  # Utilities
-    model/                # Model configs, providers, validation
-  skills/                 # Skill system
-  plugins/                # Plugin system
-  bridge/                 # IDE bridge
-  voice/                  # Voice input
-  tasks/                  # Background task management
-```
+ISC. 上游 Claude Code 源码版权属于 Anthropic；本 fork 只使用通过 npm 公开分发的代码。请自行评估使用风险。
 
 ---
 
-## Tech Stack
+## English summary
 
-| | |
-|---|---|
-| **Runtime** | [Bun](https://bun.sh) |
-| **Language** | TypeScript |
-| **Terminal UI** | React + [Ink](https://github.com/vadimdemedes/ink) |
-| **CLI Parsing** | [Commander.js](https://github.com/tj/commander.js) |
-| **Schema Validation** | Zod v4 |
-| **Code Search** | ripgrep (bundled) |
-| **Protocols** | MCP, LSP |
-| **APIs** | Anthropic Messages, OpenAI Codex, AWS Bedrock, Google Vertex AI |
+`wtcc` is a **Claude Code Chinese fork** built on top of [paoloanzn/free-code](https://github.com/paoloanzn/free-code). It adds:
 
----
+- Native Chinese (zh-CN) localisation across UI, slash commands, and errors
+- A multi-provider AI CLI layer that lets one binary talk to Anthropic, OpenAI, and any OpenAI-compatible relay
+- A self-healing OpenAI adapter (orphan tool_calls, parallel tool_calls, real token usage)
+- Dynamic `/model` menu and per-model `/effort` schemas
 
-## IPFS Mirror
+Install with `npm install -g wtcc` (requires Bun ≥ 1.3 on PATH). For self-hosted Claude Code workflows behind an OpenAI-protocol relay, set `WTCC_RELAY_KEY` and run `./wtcc-zh.sh`. Full docs above in Chinese; commands and env vars are language-agnostic.
 
-A full copy of this repository is permanently pinned on IPFS via Filecoin:
-
-| | |
-|---|---|
-| **CID** | `bafybeiegvef3dt24n2znnnmzcud2vxat7y7rl5ikz7y7yoglxappim54bm` |
-| **Gateway** | https://w3s.link/ipfs/bafybeiegvef3dt24n2znnnmzcud2vxat7y7rl5ikz7y7yoglxappim54bm |
-
-If this repo gets taken down, the code lives on.
-
----
-
-## Contributing
-
-Contributions are welcome. If you're working on restoring one of the 34 broken feature flags, check the reconstruction notes in [FEATURES.md](FEATURES.md) first -- many are close to compiling and just need a small wrapper or missing asset.
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feat/my-feature`)
-3. Commit your changes (`git commit -m 'feat: add something'`)
-4. Push to the branch (`git push origin feat/my-feature`)
-5. Open a Pull Request
-
----
-
-## License
-
-The original Claude Code source is the property of Anthropic. This fork exists because the source was publicly exposed through their npm distribution. Use at your own discretion.
+PRs welcome at [github.com/UnstoppableCurry/free-code](https://github.com/UnstoppableCurry/free-code).

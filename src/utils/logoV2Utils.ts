@@ -16,6 +16,11 @@ import {
 import { gt } from './semver.js'
 import { loadMessageLogs } from './sessionStorage.js'
 import { getInitialSettings } from './settings/settings.js'
+import { translations } from '../i18n/locales/index.js'
+import { createTranslator, resolveLocaleFromEnv } from '../i18n/translator.js'
+function logoT(key: string, vars?: Record<string, string | number>): string {
+  return createTranslator(resolveLocaleFromEnv(process.env), translations)(key, vars)
+}
 
 // Layout constants
 const MAX_LEFT_WIDTH = 50
@@ -259,8 +264,8 @@ export function getLogoDisplayData(): {
   const billingType = isClaudeAISubscriber()
     ? getSubscriptionName()
     : isCodexSubscriber()
-      ? 'Codex API Billing'
-      : 'API Usage Billing'
+      ? logoT('footer.codexApiBilling')
+      : logoT('footer.apiUsageBilling')
   const agentName = getInitialSettings().agent
 
   return {

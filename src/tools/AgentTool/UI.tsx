@@ -561,10 +561,34 @@ export function renderToolUseProgressMessage(progressMessages: ProgressMessage<P
           return <MessageComponent key={processed.message.uuid} message={processed.message.data.message} lookups={subagentLookups} addMargin={false} tools={tools} commands={[]} verbose={verbose} inProgressToolUseIDs={collapsedInProgressIDs} progressMessagesForMessage={[]} shouldAnimate={false} shouldShowDot={false} style="condensed" isTranscriptMode={false} isStatic={true} />;
         })}
         </SubAgentProvider>
-        {hiddenToolUseCount > 0 && <Text dimColor>
-            +{hiddenToolUseCount} more tool{' '}
-            {hiddenToolUseCount === 1 ? 'use' : 'uses'} <CtrlOToExpand />
-          </Text>}
+        {(() => {
+          // Per-subagent footer: total tool uses + accumulated tokens.
+          // Single line, no '+N more' duplicate. Mirrors the parallel-agent
+          // list view's per-row format ("· N tool uses · X tokens").
+          const stats = getProgressStats()
+          const totalToolUses = stats.toolUseCount
+          const tokens = stats.tokens
+          const hasContent = totalToolUses > 0 || tokens !== null
+          const hasHidden = hiddenToolUseCount > 0
+          if (!hasContent) return null
+          return (
+            <Text dimColor>
+              {totalToolUses} tool{totalToolUses === 1 ? ' use' : ' uses'}
+              {tokens !== null && (
+                <>
+                  {' · '}
+                  {formatNumber(tokens)} tokens
+                </>
+              )}
+              {hasHidden && (
+                <>
+                  {' '}
+                  <CtrlOToExpand />
+                </>
+              )}
+            </Text>
+          )
+        })()}
       </Box>
     </MessageResponse>;
 }

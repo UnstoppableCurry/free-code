@@ -33,6 +33,18 @@ import {
 } from './model.js'
 import { has1mContext } from '../context.js'
 import { getGlobalConfig } from '../config.js'
+import { translations } from '../../i18n/locales/index.js'
+import {
+  createTranslator,
+  resolveLocaleFromEnv,
+} from '../../i18n/translator.js'
+
+function tt(key: string, vars?: Record<string, string | number>): string {
+  return createTranslator(resolveLocaleFromEnv(process.env), translations)(
+    key,
+    vars,
+  )
+}
 
 // @[MODEL LAUNCH]: Update all the available and default model option strings below.
 
@@ -50,8 +62,8 @@ export function getDefaultOptionForUser(fastMode = false): ModelOption {
     )
     return {
       value: null,
-      label: 'Default (recommended)',
-      description: `Use the default model for Ants (currently ${currentModel})`,
+      label: tt('modelMenu.defaultLabel'),
+      description: tt('modelMenu.useDefaultForAnts', { model: currentModel }),
       descriptionForModel: `Default model (currently ${currentModel})`,
     }
   }
@@ -60,17 +72,20 @@ export function getDefaultOptionForUser(fastMode = false): ModelOption {
   if (isClaudeAISubscriber()) {
     return {
       value: null,
-      label: 'Default (recommended)',
+      label: tt('modelMenu.defaultLabel'),
       description: getClaudeAiUserDefaultModelDescription(fastMode),
     }
   }
 
   // PAYG
   const is3P = getAPIProvider() !== 'firstParty'
+  const baseDesc = tt('modelMenu.useDefault', {
+    model: renderDefaultModelSetting(getDefaultMainLoopModelSetting()),
+  })
   return {
     value: null,
-    label: 'Default (recommended)',
-    description: `Use the default model (currently ${renderDefaultModelSetting(getDefaultMainLoopModelSetting())})${is3P ? '' : ` · ${formatModelPricing(COST_TIER_3_15)}`}`,
+    label: tt('modelMenu.defaultLabel'),
+    description: `${baseDesc}${is3P ? '' : ` · ${formatModelPricing(COST_TIER_3_15)}`}`,
   }
 }
 
@@ -86,7 +101,7 @@ function getCustomSonnetOption(): ModelOption | undefined {
         process.env.ANTHROPIC_DEFAULT_SONNET_MODEL_NAME ?? customSonnetModel,
       description:
         process.env.ANTHROPIC_DEFAULT_SONNET_MODEL_DESCRIPTION ??
-        `Custom Sonnet model${is1m ? ' (1M context)' : ''}`,
+        `${tt('modelMenu.customSonnet')}${is1m ? ' (1M context)' : ''}`,
       descriptionForModel: `${process.env.ANTHROPIC_DEFAULT_SONNET_MODEL_DESCRIPTION ?? `Custom Sonnet model${is1m ? ' with 1M context' : ''}`} (${customSonnetModel})`,
     }
   }
@@ -99,7 +114,7 @@ function getSonnet46Option(): ModelOption {
   return {
     value: is3P ? getModelStrings().sonnet46 : 'sonnet',
     label: 'Sonnet',
-    description: `Sonnet 4.6 · Best for everyday tasks${is3P ? '' : ` · ${formatModelPricing(COST_TIER_3_15)}`}`,
+    description: `Sonnet 4.6 · ${tt('modelMenu.bestForEveryday')}${is3P ? '' : ` · ${formatModelPricing(COST_TIER_3_15)}`}`,
     descriptionForModel:
       'Sonnet 4.6 - best for everyday tasks. Generally recommended for most coding tasks',
   }
@@ -116,7 +131,7 @@ function getCustomOpusOption(): ModelOption | undefined {
       label: process.env.ANTHROPIC_DEFAULT_OPUS_MODEL_NAME ?? customOpusModel,
       description:
         process.env.ANTHROPIC_DEFAULT_OPUS_MODEL_DESCRIPTION ??
-        `Custom Opus model${is1m ? ' (1M context)' : ''}`,
+        `${tt('modelMenu.customOpus')}${is1m ? ' (1M context)' : ''}`,
       descriptionForModel: `${process.env.ANTHROPIC_DEFAULT_OPUS_MODEL_DESCRIPTION ?? `Custom Opus model${is1m ? ' with 1M context' : ''}`} (${customOpusModel})`,
     }
   }
@@ -126,7 +141,7 @@ function getOpus41Option(): ModelOption {
   return {
     value: 'opus',
     label: 'Opus 4.1',
-    description: `Opus 4.1 · Legacy`,
+    description: `Opus 4.1 · ${tt('modelMenu.legacy')}`,
     descriptionForModel: 'Opus 4.1 - legacy version',
   }
 }
@@ -136,7 +151,7 @@ function getOpus46Option(fastMode = false): ModelOption {
   return {
     value: is3P ? getModelStrings().opus46 : 'opus',
     label: 'Opus',
-    description: `Opus 4.6 · Most capable for complex work${getOpus46PricingSuffix(fastMode)}`,
+    description: `Opus 4.6 · ${tt('modelMenu.mostCapable')}${getOpus46PricingSuffix(fastMode)}`,
     descriptionForModel: 'Opus 4.6 - most capable for complex work',
   }
 }
@@ -146,7 +161,7 @@ export function getSonnet46_1MOption(): ModelOption {
   return {
     value: is3P ? getModelStrings().sonnet46 + '[1m]' : 'sonnet[1m]',
     label: 'Sonnet (1M context)',
-    description: `Sonnet 4.6 for long sessions${is3P ? '' : ` · ${formatModelPricing(COST_TIER_3_15)}`}`,
+    description: `Sonnet 4.6 ${tt('modelMenu.forLongSessions')}${is3P ? '' : ` · ${formatModelPricing(COST_TIER_3_15)}`}`,
     descriptionForModel:
       'Sonnet 4.6 with 1M context window - for long sessions with large codebases',
   }
@@ -157,7 +172,7 @@ export function getOpus46_1MOption(fastMode = false): ModelOption {
   return {
     value: is3P ? getModelStrings().opus46 + '[1m]' : 'opus[1m]',
     label: 'Opus (1M context)',
-    description: `Opus 4.6 for long sessions${getOpus46PricingSuffix(fastMode)}`,
+    description: `Opus 4.6 ${tt('modelMenu.forLongSessions')}${getOpus46PricingSuffix(fastMode)}`,
     descriptionForModel:
       'Opus 4.6 with 1M context window - for long sessions with large codebases',
   }
@@ -173,7 +188,7 @@ function getCustomHaikuOption(): ModelOption | undefined {
       label: process.env.ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME ?? customHaikuModel,
       description:
         process.env.ANTHROPIC_DEFAULT_HAIKU_MODEL_DESCRIPTION ??
-        'Custom Haiku model',
+        tt('modelMenu.customHaiku'),
       descriptionForModel: `${process.env.ANTHROPIC_DEFAULT_HAIKU_MODEL_DESCRIPTION ?? 'Custom Haiku model'} (${customHaikuModel})`,
     }
   }
@@ -184,7 +199,7 @@ function getHaiku45Option(): ModelOption {
   return {
     value: 'haiku',
     label: 'Haiku',
-    description: `Haiku 4.5 · Fastest for quick answers${is3P ? '' : ` · ${formatModelPricing(COST_HAIKU_45)}`}`,
+    description: `Haiku 4.5 · ${tt('modelMenu.fastestForQuick')}${is3P ? '' : ` · ${formatModelPricing(COST_HAIKU_45)}`}`,
     descriptionForModel:
       'Haiku 4.5 - fastest for quick answers. Lower cost but less capable than Sonnet 4.6.',
   }
@@ -195,7 +210,7 @@ function getHaiku35Option(): ModelOption {
   return {
     value: 'haiku',
     label: 'Haiku',
-    description: `Haiku 3.5 for simple tasks${is3P ? '' : ` · ${formatModelPricing(COST_HAIKU_35)}`}`,
+    description: `${tt('modelMenu.haiku35Simple')}${is3P ? '' : ` · ${formatModelPricing(COST_HAIKU_35)}`}`,
     descriptionForModel:
       'Haiku 3.5 - faster and lower cost, but less capable than Sonnet. Use for simple tasks.',
   }
@@ -241,26 +256,30 @@ function getMaxOpusOption(fastMode = false): ModelOption {
   return {
     value: 'opus',
     label: 'Opus',
-    description: `Opus 4.6 · Most capable for complex work${fastMode ? getOpus46PricingSuffix(true) : ''}`,
+    description: `Opus 4.6 · ${tt('modelMenu.mostCapable')}${fastMode ? getOpus46PricingSuffix(true) : ''}`,
   }
 }
 
 export function getMaxSonnet46_1MOption(): ModelOption {
   const is3P = getAPIProvider() !== 'firstParty'
-  const billingInfo = isClaudeAISubscriber() ? ' · Billed as extra usage' : ''
+  const billingInfo = isClaudeAISubscriber()
+    ? ` · ${tt('modelMenu.billedAsExtraUsage')}`
+    : ''
   return {
     value: 'sonnet[1m]',
     label: 'Sonnet (1M context)',
-    description: `Sonnet 4.6 with 1M context${billingInfo}${is3P ? '' : ` · ${formatModelPricing(COST_TIER_3_15)}`}`,
+    description: `Sonnet 4.6 ${tt('modelMenu.with1mContext')}${billingInfo}${is3P ? '' : ` · ${formatModelPricing(COST_TIER_3_15)}`}`,
   }
 }
 
 export function getMaxOpus46_1MOption(fastMode = false): ModelOption {
-  const billingInfo = isClaudeAISubscriber() ? ' · Billed as extra usage' : ''
+  const billingInfo = isClaudeAISubscriber()
+    ? ` · ${tt('modelMenu.billedAsExtraUsage')}`
+    : ''
   return {
     value: 'opus[1m]',
     label: 'Opus (1M context)',
-    description: `Opus 4.6 with 1M context${billingInfo}${getOpus46PricingSuffix(fastMode)}`,
+    description: `Opus 4.6 ${tt('modelMenu.with1mContext')}${billingInfo}${getOpus46PricingSuffix(fastMode)}`,
   }
 }
 
@@ -269,29 +288,33 @@ function getMergedOpus1MOption(fastMode = false): ModelOption {
   return {
     value: is3P ? getModelStrings().opus46 + '[1m]' : 'opus[1m]',
     label: 'Opus (1M context)',
-    description: `Opus 4.6 with 1M context · Most capable for complex work${!is3P && fastMode ? getOpus46PricingSuffix(fastMode) : ''}`,
+    description: `Opus 4.6 ${tt('modelMenu.with1mContext')} · ${tt('modelMenu.mostCapable')}${!is3P && fastMode ? getOpus46PricingSuffix(fastMode) : ''}`,
     descriptionForModel:
       'Opus 4.6 with 1M context - most capable for complex work',
   }
 }
 
-const MaxSonnet46Option: ModelOption = {
-  value: 'sonnet',
-  label: 'Sonnet',
-  description: 'Sonnet 4.6 · Best for everyday tasks',
+function getMaxSonnet46Option(): ModelOption {
+  return {
+    value: 'sonnet',
+    label: 'Sonnet',
+    description: `Sonnet 4.6 · ${tt('modelMenu.bestForEveryday')}`,
+  }
 }
 
-const MaxHaiku45Option: ModelOption = {
-  value: 'haiku',
-  label: 'Haiku',
-  description: 'Haiku 4.5 · Fastest for quick answers',
+function getMaxHaiku45Option(): ModelOption {
+  return {
+    value: 'haiku',
+    label: 'Haiku',
+    description: `Haiku 4.5 · ${tt('modelMenu.fastestForQuick')}`,
+  }
 }
 
 function getOpusPlanOption(): ModelOption {
   return {
     value: 'opusplan',
     label: 'Opus Plan Mode',
-    description: 'Use Opus 4.6 in plan mode, Sonnet 4.6 otherwise',
+    description: tt('modelMenu.opusPlanMode'),
   }
 }
 
@@ -334,12 +357,12 @@ function getModelOptionsBase(fastMode = false): ModelOption[] {
         premiumOptions.push(getMaxOpus46_1MOption(fastMode))
       }
 
-      premiumOptions.push(MaxSonnet46Option)
+      premiumOptions.push(getMaxSonnet46Option())
       if (checkSonnet1mAccess()) {
         premiumOptions.push(getMaxSonnet46_1MOption())
       }
 
-      premiumOptions.push(MaxHaiku45Option)
+      premiumOptions.push(getMaxHaiku45Option())
       return premiumOptions
     }
 
@@ -358,7 +381,7 @@ function getModelOptionsBase(fastMode = false): ModelOption[] {
       }
     }
 
-    standardOptions.push(MaxHaiku45Option)
+    standardOptions.push(getMaxHaiku45Option())
     return standardOptions
   }
 
@@ -485,7 +508,10 @@ function getKnownModelOption(model: string): ModelOption | null {
     return {
       value: model,
       label: marketingName,
-      description: `Newer version available · select ${familyInfo.alias} for ${familyInfo.currentVersionName}`,
+      description: tt('modelMenu.newerVersionAvailable', {
+        alias: familyInfo.alias,
+        name: familyInfo.currentVersionName,
+      }),
     }
   }
 
@@ -556,7 +582,7 @@ export function getModelOptions(fastMode = false): ModelOption[] {
       options.push({
         value: customModel,
         label: customModel,
-        description: 'Custom model',
+        description: tt('modelMenu.customModel'),
       })
     }
     return filterModelOptionsByAllowlist(options)

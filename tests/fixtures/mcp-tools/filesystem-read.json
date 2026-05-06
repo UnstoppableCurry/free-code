@@ -1,0 +1,14 @@
+{
+  "name": "Read",
+  "description": "Read a file from the local filesystem.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "file_path": { "type": "string" },
+      "offset": { "type": "integer", "minimum": 0 },
+      "limit": { "type": "integer", "exclusiveMinimum": 0 }
+    },
+    "required": ["file_path"]
+  },
+  "_source": "Built-in filesystem tool. Pristine — no arrays, used as a baseline that the sanitizer must produce identical output for."
+}

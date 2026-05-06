@@ -1,0 +1,26 @@
+{
+  "name": "mcp__playwright__browser_fill_form",
+  "description": "Fill multiple form fields at once. Each entry pairs a selector with a value.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "fields": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "selector": { "type": "string" },
+            "value": { "type": "string" },
+            "options": {
+              "type": "array",
+              "description": "Optional dropdown options — ALSO missing items, nested case."
+            }
+          },
+          "required": ["selector", "value"]
+        }
+      }
+    },
+    "required": ["fields"]
+  },
+  "_source": "Reconstructed Playwright MCP tool. Demonstrates a NESTED array-without-items bug (fields[].options) — sanitizer must recurse, not just patch the top-level."
+}

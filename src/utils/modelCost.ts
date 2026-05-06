@@ -2,6 +2,7 @@ import type { BetaUsage as Usage } from '@anthropic-ai/sdk/resources/beta/messag
 import type { AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS } from 'src/services/analytics/index.js'
 import { logEvent } from 'src/services/analytics/index.js'
 import { setHasUnknownModelCost } from '../bootstrap/state.js'
+import { getPricing } from '../routing/pricing.js'
 import { isFastModeEnabled } from './fastMode.js'
 import {
   CLAUDE_3_5_HAIKU_CONFIG,
@@ -154,7 +155,33 @@ export function getModelCosts(model: string, usage: Usage): ModelCosts {
 
   const costs = MODEL_COSTS[shortName]
   if (!costs) {
+    // Relay-served path. MODEL_COSTS only knows Anthropic-native short names.
+    // Before falling back to the default-model tier (which is wildly off for
+    // cheap models like gemini-flash or qwen-turbo), consult the relay
+    // pricing table in routing/pricing.ts. We still call
+    // trackUnknownModelCost() so the CLI keeps surfacing the
+    // "(costs may be inaccurate due to usage of unknown models)" warning —
+    // these prices come from public vendor pages and may diverge from the
+    // relay's actual billed rate.
     trackUnknownModelCost(model, shortName)
+    const relayPricing = getPricing(shortName)
+    // Detect getPricing's final-fallback medium-tier guess ($1/$4). When the
+    // model truly isn't recognized at all, prefer the existing default-model
+    // tier (preserves prior behavior for genuinely unknown ids).
+    const isFinalFallback =
+      relayPricing.input === 1.0 && relayPricing.output === 4.0
+    if (!isFinalFallback) {
+      // Cache pricing isn't published per-model for most relay vendors. Use
+      // industry-typical multipliers: write = 1.25× input, read = 0.1× input.
+      // Web search default carried over from COST_TIER_3_15.
+      return {
+        inputTokens: relayPricing.input,
+        outputTokens: relayPricing.output,
+        promptCacheWriteTokens: relayPricing.input * 1.25,
+        promptCacheReadTokens: relayPricing.input * 0.1,
+        webSearchRequests: 0.01,
+      }
+    }
     return (
       MODEL_COSTS[getCanonicalName(getDefaultMainLoopModelSetting())] ??
       DEFAULT_UNKNOWN_MODEL_COST

@@ -260,12 +260,59 @@ function translateToCodexBody(anthropicBody: Record<string, unknown>): {
     parallel_tool_calls: true,
   }
 
+  // ── service_tier (Codex /fast subscription routing) ───────────────
+  // The Codex CLI sends `service_tier` as a top-level request body field.
+  // Confirmed by the official Codex binary (Rust enum
+  // `codex_protocol::config_types::ServiceTier` with serde-lowercase variants
+  // `default`, `priority`, `fast`, `flex`). ChatGPT Plus/Pro subscriptions
+  // expose the "fast" lane for shorter queueing latency.
+  //
+  // Opt-in via env (no default — leaving the field unset preserves the
+  // user's account-level default tier configured at chatgpt.com):
+  //   WTCC_OPENAI_FAST=1                      → service_tier: "fast"
+  //   WTCC_CODEX_SERVICE_TIER=fast|flex|...   → explicit override
+  // Light-tier models (mini/nano/haiku) skip this — fast lane gives no
+  // meaningful benefit there and may be unsupported.
+  const tier = pickCodexServiceTier(codexModel)
+  if (tier) {
+    codexBody.service_tier = tier
+  }
+
   // Add tools if present
   if (anthropicTools.length > 0) {
     codexBody.tools = translateTools(anthropicTools)
   }
 
   return { codexBody, codexModel }
+}
+
+/**
+ * Decides the `service_tier` to send on a direct Codex request.
+ * Returns null when no env opt-in is set (keep account default).
+ */
+function pickCodexServiceTier(codexModel: string): string | null {
+  const explicit = process.env.WTCC_CODEX_SERVICE_TIER
+  if (explicit && explicit.length > 0) {
+    const v = explicit.toLowerCase()
+    // Whitelist matches the Codex Rust enum to avoid surprising 4xx from
+    // a typo'd env value reaching the wire.
+    if (v === 'default' || v === 'priority' || v === 'fast' || v === 'flex') {
+      return v
+    }
+    return null
+  }
+  const fastFlag = process.env.WTCC_OPENAI_FAST
+  if (!fastFlag) return null
+  const lower = fastFlag.toLowerCase()
+  if (lower !== '1' && lower !== 'true' && lower !== 'yes' && lower !== 'on') {
+    return null
+  }
+  // Light-tier models don't need fast routing.
+  const m = codexModel.toLowerCase()
+  if (m.includes('mini') || m.includes('nano') || m.includes('haiku')) {
+    return null
+  }
+  return 'fast'
 }
 
 // ── Response translation: Codex SSE → Anthropic SSE ─────────────────

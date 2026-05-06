@@ -1,0 +1,16 @@
+{
+  "name": "mcp__playwright__browser_navigate",
+  "description": "Navigate the active page to a URL.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "url": { "type": "string", "format": "uri" },
+      "wait_until": {
+        "type": "string",
+        "enum": ["load", "domcontentloaded", "networkidle"]
+      }
+    },
+    "required": ["url"]
+  },
+  "_source": "Pristine well-formed schema — control fixture. Sanitizer must leave it untouched."
+}

@@ -1,0 +1,20 @@
+{
+  "name": "mcp__browser-use__run_deep_research",
+  "description": "Spawn a browser agent to perform multi-step web research and return a structured report.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "topic": { "type": "string" },
+      "sources": {
+        "type": "array",
+        "items": { "type": "string", "format": "uri" }
+      },
+      "depth": { "type": "integer", "default": 3 },
+      "tools_allowed": {
+        "type": "array"
+      }
+    },
+    "required": ["topic"]
+  },
+  "_source": "browser-use MCP. Top-level array (`tools_allowed`) missing items — same shape as the safari bug."
+}

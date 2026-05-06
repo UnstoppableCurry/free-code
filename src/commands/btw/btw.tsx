@@ -1,5 +1,6 @@
 import { c as _c } from "react/compiler-runtime";
 import * as React from 'react';
+import { tError } from '../../i18n/errors.js';
 import { useEffect, useRef, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
 import type { CommandResultDisplay } from '../../commands.js';
@@ -97,7 +98,7 @@ function BtwSideQuestion(t0) {
             if (result.response) {
               setResponse(result.response);
             } else {
-              setError("No response received");
+              setError(tError('error.noResponseReceived'));
             }
           }
         } catch (t5) {

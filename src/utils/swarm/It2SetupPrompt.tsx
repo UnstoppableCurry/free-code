@@ -1,5 +1,6 @@
 import { c as _c } from "react/compiler-runtime";
 import React, { useCallback, useEffect, useState } from 'react';
+import { tError } from '../../i18n/errors.js';
 import { type OptionWithDescription, Select } from '../../components/CustomSelect/index.js';
 import { Pane } from '../../components/design-system/Pane.js';
 import { Spinner } from '../../components/Spinner.js';
@@ -91,7 +92,7 @@ export function It2SetupPrompt(t0) {
   if ($[9] !== packageManager) {
     t7 = async function handleInstall() {
       if (!packageManager) {
-        setError("No Python package manager found (uvx, pipx, or pip)");
+        setError(tError('error.noPythonPackageManager'));
         setStep("failed");
         return;
       }

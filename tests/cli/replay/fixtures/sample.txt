@@ -1,0 +1,4 @@
+PURPLE_PINEAPPLE_42
+This is a tiny fixture used by the live tool-use replay scenario. The
+known phrase above is unique enough that we can assert the assistant
+quoted the file content rather than hallucinating.

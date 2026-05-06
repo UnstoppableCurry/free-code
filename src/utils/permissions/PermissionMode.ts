@@ -9,6 +9,11 @@ import {
   type PermissionMode,
 } from '../../types/permissions.js'
 import { lazySchema } from '../lazySchema.js'
+import { translations } from '../../i18n/locales/index.js'
+import {
+  createTranslator,
+  resolveLocaleFromEnv,
+} from '../../i18n/translator.js'
 
 // Re-export for backwards compatibility
 export {
@@ -121,7 +126,21 @@ export function permissionModeFromString(str: string): PermissionMode {
 }
 
 export function permissionModeTitle(mode: PermissionMode): string {
-  return getModeConfig(mode).title
+  const en = getModeConfig(mode).title
+  const keyMap: Partial<Record<PermissionMode, string>> = {
+    bypassPermissions: 'footer.bypassPermissionsTitle',
+    acceptEdits: 'footer.acceptEditsTitle',
+    plan: 'footer.planModeTitle',
+    dontAsk: 'footer.dontAskTitle',
+    auto: 'footer.autoModeTitle',
+  }
+  const key = keyMap[mode]
+  if (!key) return en
+  const translated = createTranslator(
+    resolveLocaleFromEnv(process.env),
+    translations,
+  )(key)
+  return translated || en
 }
 
 export function isDefaultMode(mode: PermissionMode | undefined): boolean {

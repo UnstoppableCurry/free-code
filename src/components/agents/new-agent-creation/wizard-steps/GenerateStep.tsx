@@ -1,4 +1,5 @@
 import { APIUserAbortError } from '@anthropic-ai/sdk';
+import { tError } from '../../../../i18n/errors.js';
 import React, { type ReactNode, useCallback, useRef, useState } from 'react';
 import { useMainLoopModel } from '../../../../hooks/useMainLoopModel.js';
 import { Box, Text } from '../../../../ink.js';
@@ -33,7 +34,7 @@ export function GenerateStep(): ReactNode {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
       setIsGenerating(false);
-      setError('Generation cancelled');
+      setError(tError('error.generationCancelled'));
     }
   }, []);
 
@@ -77,7 +78,7 @@ export function GenerateStep(): ReactNode {
   const handleGenerate = async (): Promise<void> => {
     const trimmedPrompt = prompt.trim();
     if (!trimmedPrompt) {
-      setError('Please describe what the agent should do');
+      setError(tError('error.describeAgent'));
       return;
     }
     setError(null);

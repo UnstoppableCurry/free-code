@@ -1,4 +1,5 @@
 import { feature } from 'bun:bundle'
+import { tError } from '../../i18n/errors.js'
 import chalk from 'chalk'
 import { markPostCompaction } from 'src/bootstrap/state.js'
 import { getSystemPrompt } from '../../constants/prompts.js'
@@ -46,7 +47,7 @@ export const call: LocalCommandCall = async (args, context) => {
   messages = getMessagesAfterCompactBoundary(messages)
 
   if (messages.length === 0) {
-    throw new Error('No messages to compact')
+    throw new Error(tError('error.noMessagesToCompact'))
   }
 
   const customInstructions = args.trim()
@@ -124,7 +125,7 @@ export const call: LocalCommandCall = async (args, context) => {
     }
   } catch (error) {
     if (abortController.signal.aborted) {
-      throw new Error('Compaction canceled.')
+      throw new Error(tError('error.compactionCanceled'))
     } else if (hasExactErrorMessage(error, ERROR_MESSAGE_NOT_ENOUGH_MESSAGES)) {
       throw new Error(ERROR_MESSAGE_NOT_ENOUGH_MESSAGES)
     } else if (hasExactErrorMessage(error, ERROR_MESSAGE_INCOMPLETE_RESPONSE)) {

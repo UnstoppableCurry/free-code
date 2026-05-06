@@ -1,0 +1,28 @@
+{
+  "name": "mcp__engram__mem_search",
+  "description": "Search persistent cross-session memory by topic, keyword, or semantic similarity.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "query": { "type": "string" },
+      "topic_keys": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "limit": { "type": "integer", "minimum": 1, "maximum": 100 },
+      "filter": {
+        "oneOf": [
+          { "type": "string" },
+          {
+            "type": "object",
+            "properties": {
+              "tags": { "type": "array" }
+            }
+          }
+        ]
+      }
+    },
+    "required": ["query"]
+  },
+  "_source": "Engram MCP. Has oneOf branch where one alternative contains an array missing items — exercises oneOf/anyOf recursion."
+}

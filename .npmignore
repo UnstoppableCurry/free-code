@@ -1,0 +1,53 @@
+# Note: package.json `files` field is the authoritative allowlist.
+# This .npmignore is a safety net + documentation for what gets shipped.
+
+# source (wtcc ships ./cli, the compiled bundle, not the TS source)
+src/**
+!src/i18n/locales/**
+
+# tests / fixtures
+tests/
+*.test.ts
+*.test.tsx
+
+# build & dev tooling
+scripts/
+tools/
+.github/
+.git/
+node_modules/
+*.tsbuildinfo
+
+# repo metadata that's not for npm consumers
+CLAUDE.md
+FEATURES.md
+changes.md
+install.sh
+*-zh.sh
+run-zh.sh
+wtcc-zh.sh
+assets/
+.claude/
+.omc/
+.cursor/
+bun.lock
+
+# never ship secrets or local config
+.env
+.env.*
+*.local
+.npmrc
+
+# editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# typescript config (consumers don't need it; cli is precompiled)
+tsconfig.json
+env.d.ts
+
+# coverage
+coverage/
+*.lcov

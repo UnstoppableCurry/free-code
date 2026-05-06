@@ -12,6 +12,7 @@ import type {
   TranscriptMessage,
 } from '../../types/logs.js'
 import { parseJSONL } from '../../utils/json.js'
+import { tError } from '../../i18n/errors.js'
 import {
   getProjectDir,
   getTranscriptPath,
@@ -79,11 +80,11 @@ async function createFork(customTitle?: string): Promise<{
   try {
     transcriptContent = await readFile(currentTranscriptPath)
   } catch {
-    throw new Error('No conversation to branch')
+    throw new Error(tError('error.noConversationToBranch'))
   }
 
   if (transcriptContent.length === 0) {
-    throw new Error('No conversation to branch')
+    throw new Error(tError('error.noConversationToBranch'))
   }
 
   // Parse all transcript entries (messages + metadata entries like content-replacement)
@@ -111,7 +112,7 @@ async function createFork(customTitle?: string): Promise<{
     .flatMap(entry => entry.replacements)
 
   if (mainConversationEntries.length === 0) {
-    throw new Error('No messages to branch')
+    throw new Error(tError('error.noMessagesToBranch'))
   }
 
   // Build forked entries with new sessionId and preserved metadata

@@ -130,6 +130,9 @@ const externals = [
   'image-processor-napi',
   'modifiers-napi',
   'url-handler-napi',
+  // react-devtools-core is an optional peer dep of ink (only used in dev),
+  // not actually installed. Mark it external so the bundler skips its require.
+  'react-devtools-core',
 ]
 
 const defines = {
@@ -151,10 +154,10 @@ const defines = {
   'MACRO.NATIVE_PACKAGE_URL': 'undefined',
   'MACRO.FEEDBACK_CHANNEL': JSON.stringify('github'),
   'MACRO.ISSUES_EXPLAINER': JSON.stringify(
-    'This reconstructed source snapshot does not include Anthropic internal issue routing.',
+    'wtcc is an independent fork — for issues, open one in the wtcc repository.',
   ),
   'MACRO.VERSION_CHANGELOG': JSON.stringify(
-    dev ? getVersionChangelog() : 'https://github.com/paoloanzn/claude-code',
+    dev ? getVersionChangelog() : 'https://github.com/money/wtcc',
   ),
 } as const
 

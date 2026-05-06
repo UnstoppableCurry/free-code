@@ -143,6 +143,48 @@ export function modelSupportsAdaptiveThinking(model: string): boolean {
   return provider === 'firstParty' || provider === 'foundry'
 }
 
+/**
+ * Effort tier → Anthropic thinking budget tokens.
+ *
+ * Used on the Anthropic-native path (claude.ts paramsFromContext) to map
+ * the user's /effort selection to a meaningful thinking_config.budget_tokens
+ * value. Without this, 'xhigh' on opus-4-7 collapses to whatever
+ * getMaxThinkingTokensForModel returns — identical to 'max' — defeating the
+ * purpose of having a 5th tier.
+ *
+ * Mapping (per Anthropic thinking-config conventions, 2026):
+ *   low    →  4_096 thinking tokens
+ *   medium →  8_192
+ *   high   → 16_384
+ *   max    → 24_576
+ *   xhigh  → 32_768
+ *
+ * Returns undefined for unmapped levels (e.g. 'minimal') so callers know
+ * to fall back to getMaxThinkingTokensForModel().
+ *
+ * The OpenAI relay path is unaffected — it uses reasoning_effort (string)
+ * instead and doesn't consult this budget.
+ */
+export type EffortTier = 'low' | 'medium' | 'high' | 'max' | 'xhigh'
+
+const EFFORT_TO_THINKING_BUDGET: Record<EffortTier, number> = {
+  low: 4_096,
+  medium: 8_192,
+  high: 16_384,
+  max: 24_576,
+  xhigh: 32_768,
+}
+
+export function getThinkingBudgetForEffort(
+  effort: EffortTier | string | undefined,
+): number | undefined {
+  if (effort === undefined) return undefined
+  if (effort in EFFORT_TO_THINKING_BUDGET) {
+    return EFFORT_TO_THINKING_BUDGET[effort as EffortTier]
+  }
+  return undefined
+}
+
 export function shouldEnableThinkingByDefault(): boolean {
   if (process.env.MAX_THINKING_TOKENS) {
     return parseInt(process.env.MAX_THINKING_TOKENS, 10) > 0

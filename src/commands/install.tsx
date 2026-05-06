@@ -1,5 +1,6 @@
 import { c as _c } from "react/compiler-runtime";
 import { homedir } from 'node:os';
+import { tError } from '../i18n/errors.js';
 import { join } from 'node:path';
 import React, { useEffect, useState } from 'react';
 import type { CommandResultDisplay } from 'src/commands.js';
@@ -113,7 +114,7 @@ function Install({
 
         // Check specifically for lock failure
         if (result.lockFailed) {
-          throw new Error('Could not install - another process is currently installing Claude. Please try again in a moment.');
+          throw new Error(tError('error.installInProgress'));
         }
 
         // If we couldn't get the version, there might be an issue

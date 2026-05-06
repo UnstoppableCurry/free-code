@@ -1,4 +1,9 @@
 import type { Command } from '../../commands.js'
+import { translations } from '../../i18n/locales/index.js'
+import {
+  createTranslator,
+  resolveLocaleFromEnv,
+} from '../../i18n/translator.js'
 import { isPolicyAllowed } from '../../services/policyLimits/index.js'
 import { isEnvTruthy } from '../../utils/envUtils.js'
 import { isEssentialTrafficOnly } from '../../utils/privacyLevel.js'
@@ -7,7 +12,13 @@ const feedback = {
   aliases: ['bug'],
   type: 'local-jsx',
   name: 'feedback',
-  description: `Submit feedback about Claude Code`,
+  get description() {
+    const t = createTranslator(
+      resolveLocaleFromEnv(process.env),
+      translations,
+    )
+    return t('command.feedback.description')
+  },
   argumentHint: '[report]',
   isEnabled: () =>
     !(

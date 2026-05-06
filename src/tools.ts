@@ -58,18 +58,19 @@ import { ExitPlanModeV2Tool } from './tools/ExitPlanModeTool/ExitPlanModeV2Tool.
 import { TestingPermissionTool } from './tools/testing/TestingPermissionTool.js'
 import { GrepTool } from './tools/GrepTool/GrepTool.js'
 import { TungstenTool } from './tools/TungstenTool/TungstenTool.js'
-// Lazy require to break circular dependency: tools.ts -> TeamCreateTool/TeamDeleteTool -> ... -> tools.ts
-/* eslint-disable @typescript-eslint/no-require-imports */
-const getTeamCreateTool = () =>
-  require('./tools/TeamCreateTool/TeamCreateTool.js')
-    .TeamCreateTool as typeof import('./tools/TeamCreateTool/TeamCreateTool.js').TeamCreateTool
-const getTeamDeleteTool = () =>
-  require('./tools/TeamDeleteTool/TeamDeleteTool.js')
-    .TeamDeleteTool as typeof import('./tools/TeamDeleteTool/TeamDeleteTool.js').TeamDeleteTool
-const getSendMessageTool = () =>
-  require('./tools/SendMessageTool/SendMessageTool.js')
-    .SendMessageTool as typeof import('./tools/SendMessageTool/SendMessageTool.js').SendMessageTool
-/* eslint-enable @typescript-eslint/no-require-imports */
+// These tools used to be lazy-require'd to break a "tools.ts -> ... -> tools.ts"
+// circular dependency. Bun now refuses sync require() of any module that's
+// async (top-level await reachable through its import graph) — so the lazy
+// require throws and stalls startup. Switch to static imports; the circular
+// graph still resolves, just with cyclic exports getting populated as modules
+// finish evaluating, which is standard JS behaviour and works fine here
+// because no tool reads the others at module-top time.
+import { SendMessageTool } from './tools/SendMessageTool/SendMessageTool.js'
+import { TeamCreateTool } from './tools/TeamCreateTool/TeamCreateTool.js'
+import { TeamDeleteTool } from './tools/TeamDeleteTool/TeamDeleteTool.js'
+const getSendMessageTool = () => SendMessageTool
+const getTeamCreateTool = () => TeamCreateTool
+const getTeamDeleteTool = () => TeamDeleteTool
 import { AskUserQuestionTool } from './tools/AskUserQuestionTool/AskUserQuestionTool.js'
 import { LSPTool } from './tools/LSPTool/LSPTool.js'
 import { ListMcpResourcesTool } from './tools/ListMcpResourcesTool/ListMcpResourcesTool.js'

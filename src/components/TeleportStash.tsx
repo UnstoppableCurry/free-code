@@ -1,4 +1,5 @@
 import figures from 'figures';
+import { tError } from '../i18n/errors.js';
 import React, { useEffect, useState } from 'react';
 import { Box, Text } from '../ink.js';
 import { logForDebugging } from '../utils/debug.js';
@@ -48,14 +49,14 @@ export function TeleportStash({
         logForDebugging('Successfully stashed changes');
         onStashAndContinue();
       } else {
-        setError('Failed to stash changes');
+        setError(tError('error.failedStashChanges'));
       }
     } catch (err_0) {
       const errorMessage_0 = err_0 instanceof Error ? err_0.message : String(err_0);
       logForDebugging(`Error stashing changes: ${errorMessage_0}`, {
         level: 'error'
       });
-      setError('Failed to stash changes');
+      setError(tError('error.failedStashChanges'));
     } finally {
       setStashing(false);
     }

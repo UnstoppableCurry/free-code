@@ -1,9 +1,13 @@
 import { getIsNonInteractiveSession } from '../../bootstrap/state.js'
 import type { Command } from '../../commands.js'
+import { translations } from '../../i18n/locales/index.js'
+import { createTranslator, resolveLocaleFromEnv } from '../../i18n/translator.js'
 
 export const context: Command = {
   name: 'context',
-  description: 'Visualize current context usage as a colored grid',
+  get description() {
+    return createTranslator(resolveLocaleFromEnv(process.env), translations)('command.context.description')
+  },
   isEnabled: () => !getIsNonInteractiveSession(),
   type: 'local-jsx',
   load: () => import('./context.js'),

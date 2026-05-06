@@ -15,6 +15,11 @@ import { checkOpus1mAccess, checkSonnet1mAccess } from '../../utils/model/check1
 import { getDefaultMainLoopModelSetting, isOpus1mMergeEnabled, renderDefaultModelSetting } from '../../utils/model/model.js';
 import { isModelAllowed } from '../../utils/model/modelAllowlist.js';
 import { validateModel } from '../../utils/model/validateModel.js';
+import { translations } from '../../i18n/locales/index.js';
+import { createTranslator, resolveLocaleFromEnv } from '../../i18n/translator.js';
+function ttModel(key: string, vars?: Record<string, string | number>): string {
+  return createTranslator(resolveLocaleFromEnv(process.env), translations)(key, vars);
+}
 function ModelPickerWrapper(t0) {
   const $ = _c(17);
   const {
@@ -31,7 +36,7 @@ function ModelPickerWrapper(t0) {
         action: "cancel" as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
       });
       const displayModel = renderModelLabel(mainLoopModel);
-      onDone(`Kept model as ${chalk.bold(displayModel)}`, {
+      onDone(ttModel("modelMenu.keptModelAs", { model: chalk.bold(displayModel) }), {
         display: "system"
       });
     };
@@ -55,9 +60,9 @@ function ModelPickerWrapper(t0) {
         mainLoopModel: model,
         mainLoopModelForSession: null
       }));
-      let message = `Set model to ${chalk.bold(renderModelLabel(model))}`;
+      let message = ttModel("modelMenu.setModelTo", { model: chalk.bold(renderModelLabel(model)) });
       if (effort !== undefined) {
-        message = message + ` with ${chalk.bold(effort)} effort`;
+        message = message + ttModel("footer.withEffort", { level: chalk.bold(effort) });
       }
       let wasFastModeToggledOn = undefined;
       if (isFastModeEnabled()) {
@@ -67,16 +72,16 @@ function ModelPickerWrapper(t0) {
           wasFastModeToggledOn = false;
         } else {
           if (isFastModeSupportedByModel(model) && isFastModeAvailable() && isFastMode) {
-            message = message + " \xB7 Fast mode ON";
+            message = message + " \xB7 " + ttModel("modelMenu.fastModeOn");
             wasFastModeToggledOn = true;
           }
         }
       }
       if (isBilledAsExtraUsage(model, wasFastModeToggledOn === true, isOpus1mMergeEnabled())) {
-        message = message + " \xB7 Billed as extra usage";
+        message = message + " \xB7 " + ttModel("modelMenu.billedAsExtraUsage");
       }
       if (wasFastModeToggledOn === false) {
-        message = message + " \xB7 Fast mode OFF";
+        message = message + " \xB7 " + ttModel("modelMenu.fastModeOff");
       }
       onDone(message);
     };
@@ -142,7 +147,7 @@ function SetModelAndClose({
   React.useEffect(() => {
     async function handleModelChange(): Promise<void> {
       if (model && !isModelAllowed(model)) {
-        onDone(`Model '${model}' is not available. Your organization restricts model selection.`, {
+        onDone(ttModel('command.model.notAllowedByOrg', { model }), {
           display: 'system'
         });
         return;
@@ -150,13 +155,13 @@ function SetModelAndClose({
 
       // @[MODEL LAUNCH]: Update check for 1M access.
       if (model && isOpus1mUnavailable(model)) {
-        onDone(`Opus 4.6 with 1M context is not available for your account. Learn more: https://code.claude.com/docs/en/model-config#extended-context-with-1m`, {
+        onDone(ttModel('command.model.opus1mUnavailable'), {
           display: 'system'
         });
         return;
       }
       if (model && isSonnet1mUnavailable(model)) {
-        onDone(`Sonnet 4.6 with 1M context is not available for your account. Learn more: https://code.claude.com/docs/en/model-config#extended-context-with-1m`, {
+        onDone(ttModel('command.model.sonnet1mUnavailable'), {
           display: 'system'
         });
         return;
@@ -185,12 +190,12 @@ function SetModelAndClose({
         if (valid) {
           setModel(model);
         } else {
-          onDone(error_0 || `Model '${model}' not found`, {
+          onDone(error_0 || ttModel('command.model.modelNotFound', { model }), {
             display: 'system'
           });
         }
       } catch (error) {
-        onDone(`Failed to validate model: ${(error as Error).message}`, {
+        onDone(ttModel('command.model.validateFailed', { message: (error as Error).message }), {
           display: 'system'
         });
       }
@@ -201,7 +206,7 @@ function SetModelAndClose({
         mainLoopModel: modelValue,
         mainLoopModelForSession: null
       }));
-      let message = `Set model to ${chalk.bold(renderModelLabel(modelValue))}`;
+      let message = ttModel("modelMenu.setModelTo", { model: chalk.bold(renderModelLabel(modelValue)) });
       let wasFastModeToggledOn = undefined;
       if (isFastModeEnabled()) {
         clearFastModeCooldown();
@@ -213,16 +218,16 @@ function SetModelAndClose({
           wasFastModeToggledOn = false;
           // Do not update fast mode in settings since this is an automatic downgrade
         } else if (isFastModeSupportedByModel(modelValue) && isFastMode) {
-          message += ` · Fast mode ON`;
+          message += ` · ${ttModel("modelMenu.fastModeOn")}`;
           wasFastModeToggledOn = true;
         }
       }
       if (isBilledAsExtraUsage(modelValue, wasFastModeToggledOn === true, isOpus1mMergeEnabled())) {
-        message += ` · Billed as extra usage`;
+        message += ` · ${ttModel("modelMenu.billedAsExtraUsage")}`;
       }
       if (wasFastModeToggledOn === false) {
         // Fast mode was toggled off, show suffix after extra usage billing
-        message += ` · Fast mode OFF`;
+        message += ` · ${ttModel("modelMenu.fastModeOff")}`;
       }
       onDone(message);
     }
@@ -251,11 +256,20 @@ function ShowModelAndClose(t0) {
   const mainLoopModelForSession = useAppState(_temp8);
   const effortValue = useAppState(_temp9);
   const displayModel = renderModelLabel(mainLoopModel);
-  const effortInfo = effortValue !== undefined ? ` (effort: ${effortValue})` : "";
+  const effortInfo = effortValue !== undefined
+    ? ttModel('command.model.effortInfoSuffix', { level: String(effortValue) })
+    : "";
   if (mainLoopModelForSession) {
-    onDone(`Current model: ${chalk.bold(renderModelLabel(mainLoopModelForSession))} (session override from plan mode)\nBase model: ${displayModel}${effortInfo}`);
+    onDone(ttModel('command.model.currentSessionOverride', {
+      model: chalk.bold(renderModelLabel(mainLoopModelForSession)),
+      baseModel: displayModel,
+      effortInfo,
+    }));
   } else {
-    onDone(`Current model: ${displayModel}${effortInfo}`);
+    onDone(ttModel('command.model.currentModel', {
+      model: displayModel,
+      effortInfo,
+    }));
   }
   return null;
 }
@@ -277,7 +291,7 @@ export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
     return <ShowModelAndClose onDone={onDone} />;
   }
   if (COMMON_HELP_ARGS.includes(args)) {
-    onDone('Run /model to open the model selection menu, or /model [modelName] to set the model.', {
+    onDone(ttModel('command.model.helpHint'), {
       display: 'system'
     });
     return;

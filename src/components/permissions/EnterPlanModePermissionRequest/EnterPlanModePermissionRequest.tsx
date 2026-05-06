@@ -1,6 +1,7 @@
 import { c as _c } from "react/compiler-runtime";
 import React from 'react';
 import { handlePlanModeTransition } from '../../../bootstrap/state.js';
+import { useT } from '../../../i18n/context.js';
 import { Box, Text } from '../../../ink.js';
 import { type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS, logEvent } from '../../../services/analytics/index.js';
 import { useAppState } from '../../../state/AppState.js';
@@ -16,6 +17,7 @@ export function EnterPlanModePermissionRequest(t0) {
     onReject,
     workerBadge
   } = t0;
+  const t = useT();
   const toolPermissionContextMode = useAppState(_temp);
   let t1;
   if ($[0] !== onDone || $[1] !== onReject || $[2] !== toolPermissionContextMode || $[3] !== toolUseConfirm) {
@@ -47,47 +49,17 @@ export function EnterPlanModePermissionRequest(t0) {
     t1 = $[4];
   }
   const handleResponse = t1;
-  let t2;
-  if ($[5] === Symbol.for("react.memo_cache_sentinel")) {
-    t2 = <Text>Claude wants to enter plan mode to explore and design an implementation approach.</Text>;
-    $[5] = t2;
-  } else {
-    t2 = $[5];
-  }
-  let t3;
-  if ($[6] === Symbol.for("react.memo_cache_sentinel")) {
-    t3 = <Box marginTop={1} flexDirection="column"><Text dimColor={true}>In plan mode, Claude will:</Text><Text dimColor={true}> · Explore the codebase thoroughly</Text><Text dimColor={true}> · Identify existing patterns</Text><Text dimColor={true}> · Design an implementation strategy</Text><Text dimColor={true}> · Present a plan for your approval</Text></Box>;
-    $[6] = t3;
-  } else {
-    t3 = $[6];
-  }
-  let t4;
-  if ($[7] === Symbol.for("react.memo_cache_sentinel")) {
-    t4 = <Box marginTop={1}><Text dimColor={true}>No code changes will be made until you approve the plan.</Text></Box>;
-    $[7] = t4;
-  } else {
-    t4 = $[7];
-  }
-  let t5;
-  if ($[8] === Symbol.for("react.memo_cache_sentinel")) {
-    t5 = {
-      label: "Yes, enter plan mode",
-      value: "yes" as const
-    };
-    $[8] = t5;
-  } else {
-    t5 = $[8];
-  }
-  let t6;
-  if ($[9] === Symbol.for("react.memo_cache_sentinel")) {
-    t6 = [t5, {
-      label: "No, start implementing now",
-      value: "no" as const
-    }];
-    $[9] = t6;
-  } else {
-    t6 = $[9];
-  }
+  const t2 = <Text>{t('ui.permissions.enterPlanMode.body')}</Text>;
+  const t3 = <Box marginTop={1} flexDirection="column"><Text dimColor={true}>{t('ui.permissions.enterPlanMode.bulletHeader')}</Text><Text dimColor={true}>{t('ui.permissions.enterPlanMode.bulletExplore')}</Text><Text dimColor={true}>{t('ui.permissions.enterPlanMode.bulletPatterns')}</Text><Text dimColor={true}>{t('ui.permissions.enterPlanMode.bulletDesign')}</Text><Text dimColor={true}>{t('ui.permissions.enterPlanMode.bulletPresent')}</Text></Box>;
+  const t4 = <Box marginTop={1}><Text dimColor={true}>{t('ui.permissions.enterPlanMode.noCodeChanges')}</Text></Box>;
+  const t5 = {
+    label: t('ui.permissions.enterPlanMode.yes'),
+    value: "yes" as const
+  };
+  const t6 = [t5, {
+    label: t('ui.permissions.enterPlanMode.no'),
+    value: "no" as const
+  }];
   let t7;
   if ($[10] !== handleResponse) {
     t7 = () => handleResponse("no");
@@ -107,7 +79,7 @@ export function EnterPlanModePermissionRequest(t0) {
   }
   let t9;
   if ($[15] !== t8 || $[16] !== workerBadge) {
-    t9 = <PermissionDialog color="planMode" title="Enter plan mode?" workerBadge={workerBadge}>{t8}</PermissionDialog>;
+    t9 = <PermissionDialog color="planMode" title={t('ui.permissions.enterPlanMode.title')} workerBadge={workerBadge}>{t8}</PermissionDialog>;
     $[15] = t8;
     $[16] = workerBadge;
     $[17] = t9;

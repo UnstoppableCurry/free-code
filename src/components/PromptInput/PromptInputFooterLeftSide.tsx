@@ -347,7 +347,11 @@ function ModeIndicator({
   // doesn't push the mode indicator off-screen.
   const modePart = currentMode && hasActiveMode && !getIsRemoteMode() ? <Text color={getModeColor(currentMode)} key="mode">
         {permissionModeSymbol(currentMode)}{' '}
-        {permissionModeTitle(currentMode).toLowerCase()} on
+        {(() => {
+          const isZh = (process.env.FREE_CODE_LANG ?? process.env.LANG ?? '').toLowerCase().startsWith('zh');
+          const title = permissionModeTitle(currentMode);
+          return isZh ? `已开启 ${title} 模式` : `${title.toLowerCase()} on`;
+        })()}
         {shouldShowModeHint && <Text dimColor>
             {' '}
             <KeyboardShortcutHint shortcut={modeCycleShortcut} action="cycle" parens />

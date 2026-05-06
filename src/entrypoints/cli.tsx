@@ -1,4 +1,21 @@
 import { feature } from 'bun:bundle';
+import { I18nProvider } from '../i18n/context.js';
+import { translations } from '../i18n/locales/index.js';
+import { resolveLocaleFromEnv } from '../i18n/translator.js';
+
+// i18n bootstrap. cli.tsx delegates Ink rendering to handlers in main.js / cli/handlers/*,
+// so we cannot wrap a single render() call here. Instead we (1) freeze the resolved locale
+// into FREE_CODE_LANG at module load so every downstream resolveLocaleFromEnv() agrees,
+// and (2) re-export I18nProvider + translations so callers wrapping their own Ink trees
+// (REPL, dialogs) can mount the provider with consistent state. The slash-command
+// description getters read FREE_CODE_LANG via resolveLocaleFromEnv at access time.
+// As of the wrap-render-sites change, src/ink.ts also auto-injects <I18nProvider>
+// into every render()/createRoot() tree so handler files do not need to wrap
+// manually; this freeze still matters for code that resolves locale outside
+// the React tree (e.g. command description getters).
+// eslint-disable-next-line custom-rules/no-top-level-side-effects, custom-rules/no-process-env-top-level
+process.env.FREE_CODE_LANG ??= resolveLocaleFromEnv(process.env);
+export { I18nProvider, translations };
 
 // Define MACRO global for development (normally injected by bun build --define)
 if (typeof MACRO === 'undefined') {

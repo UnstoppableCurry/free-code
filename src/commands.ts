@@ -19,6 +19,9 @@ import cost from './commands/cost/index.js'
 import diff from './commands/diff/index.js'
 import ctx_viz from './commands/ctx_viz/index.js'
 import doctor from './commands/doctor/index.js'
+import curry from './commands/curry/index.js'
+import diagnoseRelay from './commands/diagnose-relay/index.js'
+import update from './commands/update/index.js'
 import memory from './commands/memory/index.js'
 import help from './commands/help/index.js'
 import ide from './commands/ide/index.js'
@@ -56,6 +59,7 @@ import terminalSetup from './commands/terminalSetup/index.js'
 import usage from './commands/usage/index.js'
 import theme from './commands/theme/index.js'
 import vim from './commands/vim/index.js'
+import whyThisModel from './commands/why-this-model/index.js'
 import { feature } from 'bun:bundle'
 // Dead code elimination: conditional imports
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -272,6 +276,9 @@ const COMMANDS = memoize((): Command[] => [
   cost,
   diff,
   doctor,
+  curry,
+  diagnoseRelay,
+  update,
   effort,
   exit,
   fast,
@@ -316,6 +323,7 @@ const COMMANDS = memoize((): Command[] => [
   usage,
   usageReport,
   vim,
+  whyThisModel,
   ...(webCmd ? [webCmd] : []),
   ...(forkCmd ? [forkCmd] : []),
   ...(buddy ? [buddy] : []),

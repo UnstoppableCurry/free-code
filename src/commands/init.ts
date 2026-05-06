@@ -1,5 +1,10 @@
 import { feature } from 'bun:bundle'
 import type { Command } from '../commands.js'
+import { translations } from '../i18n/locales/index.js'
+import {
+  createTranslator,
+  resolveLocaleFromEnv,
+} from '../i18n/translator.js'
 import { maybeMarkProjectOnboardingComplete } from '../projectOnboardingState.js'
 import { isEnvTruthy } from '../utils/envUtils.js'
 
@@ -227,11 +232,15 @@ const command = {
   type: 'prompt',
   name: 'init',
   get description() {
+    const t = createTranslator(
+      resolveLocaleFromEnv(process.env),
+      translations,
+    )
     return feature('NEW_INIT') &&
       (process.env.USER_TYPE === 'ant' ||
         isEnvTruthy(process.env.CLAUDE_CODE_NEW_INIT))
-      ? 'Initialize new CLAUDE.md file(s) and optional skills/hooks with codebase documentation'
-      : 'Initialize a new CLAUDE.md file with codebase documentation'
+      ? t('command.init.description.new')
+      : t('command.init.description')
   },
   contentLength: 0, // Dynamic content
   progressMessage: 'analyzing your codebase',

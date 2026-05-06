@@ -14,6 +14,7 @@
  * used by the openclaw project.
  */
 import { createServer, type Server } from 'http'
+import { tError } from 'src/i18n/errors.js'
 import { logEvent } from 'src/services/analytics/index.js'
 import {
   CODEX_AUTHORIZE_URL,
@@ -178,7 +179,7 @@ export async function exchangeCodexCode(
     }),
   )
   if (result.type !== 'success') {
-    throw new Error('Codex token exchange failed. Please try again.')
+    throw new Error(tError('error.codexTokenExchange'))
   }
   const accountId = extractCodexAccountId(result.access)
   if (!accountId) {
@@ -204,7 +205,7 @@ export async function refreshCodexToken(refreshToken: string): Promise<CodexToke
     }),
   )
   if (result.type !== 'success') {
-    throw new Error('Codex token refresh failed. Please re-login.')
+    throw new Error(tError('error.codexTokenRefresh'))
   }
   const accountId = extractCodexAccountId(result.access)
   if (!accountId) {

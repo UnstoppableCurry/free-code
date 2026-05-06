@@ -1,5 +1,8 @@
 import { createElement, type ReactNode } from 'react'
 import { ThemeProvider } from './components/design-system/ThemeProvider.js'
+import { I18nProvider } from './i18n/context.js'
+import { translations } from './i18n/locales/index.js'
+import { resolveLocaleFromEnv } from './i18n/translator.js'
 import inkRender, {
   type Instance,
   createRoot as inkCreateRoot,
@@ -9,10 +12,18 @@ import inkRender, {
 
 export type { RenderOptions, Instance, Root }
 
-// Wrap all CC render calls with ThemeProvider so ThemedBox/ThemedText work
-// without every call site having to mount it. Ink itself is theme-agnostic.
+// Wrap all CC render calls with ThemeProvider + I18nProvider so ThemedBox/
+// ThemedText and useT() work without every call site having to mount them.
+// Locale is resolved from process.env at render time (FREE_CODE_LANG / LANG
+// / LC_ALL / LC_MESSAGES); this is the single chokepoint that wires every
+// `render()` and `root.render(...)` site (handlers, main.tsx, REPL launcher).
 function withTheme(node: ReactNode): ReactNode {
-  return createElement(ThemeProvider, null, node)
+  const locale = resolveLocaleFromEnv(process.env)
+  return createElement(
+    ThemeProvider,
+    null,
+    createElement(I18nProvider, { locale, translations }, node),
+  )
 }
 
 export async function render(

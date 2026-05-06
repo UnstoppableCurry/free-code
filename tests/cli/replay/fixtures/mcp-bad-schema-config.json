@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "badSchema": {
+      "command": "node",
+      "args": ["./tests/cli/replay/fixtures/mcp-bad-schema-server.mjs"]
+    }
+  }
+}

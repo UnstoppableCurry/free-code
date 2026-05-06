@@ -1,7 +1,16 @@
 import type { CallToolResult, ToolAnnotations } from '@modelcontextprotocol/sdk/types.js'
 import type { ZodTypeAny } from 'zod/v4'
 
-export type EffortLevel = 'low' | 'medium' | 'high' | 'max'
+// 'minimal' is the gpt-5.x bottom tier; 'xhigh' is opus-4-7's top tier.
+// The /effort UI picks the appropriate subset per model via
+// utils/effort.ts:getEffortLevelsForModel().
+export type EffortLevel =
+  | 'minimal'
+  | 'low'
+  | 'medium'
+  | 'high'
+  | 'max'
+  | 'xhigh'
 
 export type AnyZodRawShape = Record<string, ZodTypeAny>
 

@@ -1,4 +1,6 @@
 import { feature } from 'bun:bundle'
+import { translations } from '../i18n/locales/index.js'
+import { createTranslator, resolveLocaleFromEnv } from '../i18n/translator.js'
 import { z } from 'zod/v4'
 import { getKairosActive, setUserMsgOptIn } from '../bootstrap/state.js'
 import { getFeatureValue_CACHED_MAY_BE_STALE } from '../services/analytics/growthbook.js'
@@ -47,7 +49,9 @@ function getBriefConfig(): BriefConfig {
 const brief = {
   type: 'local-jsx',
   name: 'brief',
-  description: 'Toggle brief-only mode',
+  get description() {
+    return createTranslator(resolveLocaleFromEnv(process.env), translations)('command.brief.description')
+  },
   isEnabled: () => {
     if (feature('KAIROS') || feature('KAIROS_BRIEF')) {
       return getBriefConfig().enable_slash_command

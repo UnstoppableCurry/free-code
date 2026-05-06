@@ -7,15 +7,49 @@ import { getAPIProvider } from './model/providers.js'
 import { get3PModelCapabilityOverride } from './model/modelSupportOverrides.js'
 import { isEnvTruthy } from './envUtils.js'
 import type { EffortLevel } from 'src/entrypoints/sdk/runtimeTypes.js'
+import { translations } from '../i18n/locales/index.js'
+import { createTranslator, resolveLocaleFromEnv } from '../i18n/translator.js'
 
 export type { EffortLevel }
 
 export const EFFORT_LEVELS = [
+  'minimal',
   'low',
   'medium',
   'high',
   'max',
+  'xhigh',
 ] as const satisfies readonly EffortLevel[]
+
+/**
+ * Each model family exposes a different effort schema. Return the cycle
+ * the /effort UI should walk for this specific model id.
+ *
+ *   gpt-5.x / o-series       → ['low','medium','high','max']         (4 levels)
+ *   claude-opus-4-7          → ['low','medium','high','max','xhigh'] (5 levels)
+ *   claude-{opus,sonnet}-4-6 → ['low','medium','high','max']         (4 levels)
+ *   anything else            → ['low','medium','high']               (3 levels)
+ *
+ * 'max' on the OpenAI wire collapses to 'high' (OpenAI doesn't expose
+ * an explicit max tier); on Anthropic-native it maps to a richer
+ * thinking-budget. xhigh is opus-4-7 only.
+ *
+ * Pattern-based — adding a new opus / gpt version doesn't need an
+ * allow-list update.
+ */
+export function getEffortLevelsForModel(model: string): EffortLevel[] {
+  const m = model.toLowerCase()
+  if (m.startsWith('gpt-5') || /^o[1-9](\b|[a-z-])/.test(m)) {
+    return ['low', 'medium', 'high', 'max']
+  }
+  if (m.includes('opus-4-7')) {
+    return ['low', 'medium', 'high', 'max', 'xhigh']
+  }
+  if (m.includes('opus-4-6') || m.includes('sonnet-4-6')) {
+    return ['low', 'medium', 'high', 'max']
+  }
+  return ['low', 'medium', 'high']
+}
 
 export type EffortValue = EffortLevel | number
 
@@ -33,18 +67,28 @@ export function modelSupportsEffort(model: string): boolean {
   if (m.includes('opus-4-6') || m.includes('sonnet-4-6')) {
     return true
   }
+  // Defer to our routing-layer inference for any non-Anthropic id. This
+  // picks up gpt-5+, o-series, deepseek-r*, kimi-*-thinking, claude-opus,
+  // and any future family by pattern — no hardcoded list to maintain.
+  // Imported lazily to avoid a circular dependency on routing/registry.
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { getModelInfo } = require('../routing/registry.js') as {
+      getModelInfo: (id: string) => { supportsReasoningEffort?: boolean }
+    }
+    const info = getModelInfo(model)
+    if (info.supportsReasoningEffort) {
+      return true
+    }
+  } catch {
+    // routing module unavailable — fall through to legacy logic
+  }
   // Exclude any other known legacy models (haiku, older opus/sonnet variants)
   if (m.includes('haiku') || m.includes('sonnet') || m.includes('opus')) {
     return false
   }
-
-  // IMPORTANT: Do not change the default effort support without notifying
-  // the model launch DRI and research. This is a sensitive setting that can
-  // greatly affect model quality and bashing.
-
-  // Default to true for unknown model strings on 1P.
-  // Do not default to true for 3P as they have different formats for their
-  // model strings (ex. anthropics/claude-code#30795)
+  // Default to true for unknown model strings on 1P. Do not default to true
+  // for 3P as they have different model id formats.
   return getAPIProvider() === 'firstParty'
 }
 
@@ -55,7 +99,13 @@ export function modelSupportsMaxEffort(model: string): boolean {
   if (supported3P !== undefined) {
     return supported3P
   }
-  if (model.toLowerCase().includes('opus-4-6')) {
+  // gpt-5.x, o-series, opus-4-6, opus-4-7 all expose 'max' in their UX
+  // cycle. (For OpenAI wire 'max' collapses to 'high'.)
+  const m = model.toLowerCase()
+  if (m.includes('opus-4-6') || m.includes('opus-4-7')) {
+    return true
+  }
+  if (m.startsWith('gpt-5') || /^o[1-9](\b|[a-z-])/.test(m)) {
     return true
   }
   if (process.env.USER_TYPE === 'ant' && resolveAntModel(model)) {
@@ -192,7 +242,13 @@ export function getEffortSuffix(
   if (effortValue === undefined) return ''
   const resolved = resolveAppliedEffort(model, effortValue)
   if (resolved === undefined) return ''
-  return ` with ${convertEffortValueToLevel(resolved)} effort`
+  const level = convertEffortValueToLevel(resolved)
+  // Locale-aware effort suffix. zh-CN renders "（X 思考强度）" instead of
+  // " with X effort".
+  return createTranslator(resolveLocaleFromEnv(process.env), translations)(
+    'footer.withEffort',
+    { level },
+  )
 }
 
 export function isValidNumericEffort(value: number): boolean {

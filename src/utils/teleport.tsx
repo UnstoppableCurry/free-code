@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { tError } from '../i18n/errors.js';
 import chalk from 'chalk';
 import { randomUUID } from 'crypto';
 import React from 'react';
@@ -429,7 +430,7 @@ export async function validateSessionRepository(sessionData: SessionResource): P
  */
 export async function teleportResumeCodeSession(sessionId: string, onProgress?: TeleportProgressCallback): Promise<TeleportRemoteResponse> {
   if (!isPolicyAllowed('allow_remote_sessions')) {
-    throw new Error("Remote sessions are disabled by your organization's policy.");
+    throw new Error(tError('error.remoteSessionsDisabled'));
   }
   logForDebugging(`Resuming code session ID: ${sessionId}`);
   try {
@@ -438,7 +439,7 @@ export async function teleportResumeCodeSession(sessionId: string, onProgress?: 
       logEvent('tengu_teleport_resume_error', {
         error_type: 'no_access_token' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
       });
-      throw new Error('Claude Code web sessions require authentication with a Claude.ai account. API key authentication is not sufficient. Please run /login to authenticate, or check your authentication status with /status.');
+      throw new Error(tError('error.webSessionRequiresLogin'));
     }
 
     // Get organization UUID
@@ -581,7 +582,7 @@ export async function teleportFromSessionsAPI(sessionId: string, orgUUID: string
     }
     logForDebugging(`[teleport] Session logs fetched in ${Date.now() - logsStartTime}ms`);
     if (logs === null) {
-      throw new Error('Failed to fetch session logs');
+      throw new Error(tError('error.failedFetchSessionLogs'));
     }
 
     // Filter to get only transcript messages, excluding sidechain messages

@@ -1,0 +1,9 @@
+{
+  "name": "mcp__safari__safari_list_sessions",
+  "description": "List active Safari debug sessions.",
+  "input_schema": {
+    "type": "object",
+    "properties": {}
+  },
+  "_source": "Safari MCP. Empty-properties object — sanitizer must not add `items` anywhere because there are no arrays."
+}

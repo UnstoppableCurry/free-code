@@ -1,3 +1,8 @@
+import { translations } from '../i18n/locales/index.js'
+import {
+  createTranslator,
+  resolveLocaleFromEnv,
+} from '../i18n/translator.js'
 import type { Command, LocalCommandCall } from '../types/command.js'
 
 const call: LocalCommandCall = async () => {
@@ -12,8 +17,13 @@ const call: LocalCommandCall = async () => {
 const version = {
   type: 'local',
   name: 'version',
-  description:
-    'Print the version this session is running (not what autoupdate downloaded)',
+  get description() {
+    const t = createTranslator(
+      resolveLocaleFromEnv(process.env),
+      translations,
+    )
+    return t('command.version.description')
+  },
   isEnabled: () => process.env.USER_TYPE === 'ant',
   supportsNonInteractive: true,
   load: () => Promise.resolve({ call }),

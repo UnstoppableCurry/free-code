@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { tError } from '../../i18n/errors.js';
 import { useEffect, useRef, useState } from 'react';
 import { type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS, logEvent } from 'src/services/analytics/index.js';
 import { ConfigurableShortcutHint } from '../../components/ConfigurableShortcutHint.js';
@@ -45,12 +46,12 @@ export function AddMarketplace({
   const handleAdd = async () => {
     const input = inputValue.trim();
     if (!input) {
-      setError('Please enter a marketplace source');
+      setError(tError('error.enterMarketplaceSource'));
       return;
     }
     const parsed = await parseMarketplaceInput(input);
     if (!parsed) {
-      setError('Invalid marketplace source format. Try: owner/repo, https://..., or ./path');
+      setError(tError('error.invalidMarketplaceSource'));
       return;
     }
 

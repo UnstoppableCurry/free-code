@@ -1,0 +1,22 @@
+{
+  "name": "mcp__safari__safari_execute_script",
+  "description": "Execute arbitrary JavaScript inside the active Safari tab. Returns the script's evaluated result.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "script": {
+        "type": "string",
+        "description": "JavaScript source to evaluate."
+      },
+      "args": {
+        "type": "array",
+        "description": "Positional arguments forwarded to the script (missing items — the original bug)."
+      },
+      "session_id": {
+        "type": "string"
+      }
+    },
+    "required": ["script"]
+  },
+  "_source": "Faithful reproduction of the schema that triggered HTTP 400 on convertmodel.net during the 118-tool REPL load (commit f0f50b3). `properties.args` declares type:array with no items field."
+}

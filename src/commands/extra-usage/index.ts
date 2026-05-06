@@ -1,5 +1,7 @@
 import { getIsNonInteractiveSession } from '../../bootstrap/state.js'
 import type { Command } from '../../commands.js'
+import { translations } from '../../i18n/locales/index.js'
+import { createTranslator, resolveLocaleFromEnv } from '../../i18n/translator.js'
 import { isOverageProvisioningAllowed } from '../../utils/auth.js'
 import { isEnvTruthy } from '../../utils/envUtils.js'
 
@@ -13,7 +15,9 @@ function isExtraUsageAllowed(): boolean {
 export const extraUsage = {
   type: 'local-jsx',
   name: 'extra-usage',
-  description: 'Configure extra usage to keep working when limits are hit',
+  get description() {
+    return createTranslator(resolveLocaleFromEnv(process.env), translations)('command.extraUsage.description')
+  },
   isEnabled: () => isExtraUsageAllowed() && !getIsNonInteractiveSession(),
   load: () => import('./extra-usage.js'),
 } satisfies Command

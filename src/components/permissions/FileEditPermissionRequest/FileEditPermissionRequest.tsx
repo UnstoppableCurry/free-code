@@ -27,6 +27,7 @@ const ideDiffSupport: IDEDiffSupport<FileEditInput> = {
 };
 export function FileEditPermissionRequest(props) {
   const $ = _c(51);
+  const t = useT();
   const parseInput = _temp;
   let T0;
   let T1;
@@ -60,10 +61,10 @@ export function FileEditPermissionRequest(props) {
     t6 = props.onDone;
     t7 = props.onReject;
     t8 = props.workerBadge;
-    t9 = "Edit file";
+    t9 = t('ui.permissions.fileEdit.title');
     t10 = relative(getCwd(), file_path);
     T1 = Text;
-    t2 = "Do you want to make this edit to";
+    t2 = t('ui.permissions.fileEdit.question');
     t3 = " ";
     T0 = Text;
     t0 = true;

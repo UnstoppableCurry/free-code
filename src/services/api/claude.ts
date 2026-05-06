@@ -24,6 +24,16 @@ import {
   getAPIProvider,
   isFirstPartyAnthropicBaseUrl,
 } from 'src/utils/model/providers.js'
+import { queryModelOpenAI } from './claude-openai.js'
+import { isMultiProviderNormalizedEnabled } from './multiProviderGate.js'
+import {
+  decideModelForRequest,
+  emitBannerForDecision,
+} from '../../routing/integration.js'
+import {
+  extractLastUserText,
+  messagesContainImages,
+} from '../../routing/contextExtractors.js'
 import {
   getAttributionHeader,
   getCLISyspromptPrefix,
@@ -1048,6 +1058,59 @@ async function* queryModel(
     return
   }
 
+  // MULTI_PROVIDER_NORMALIZED dispatch gate (Phase B, slice 1).
+  //
+  // When the gate is on AND the user has selected the OpenAI-compatible
+  // provider, hand the entire request off to queryModelOpenAI. The existing
+  // Anthropic-SDK path below is left UNTOUCHED — this is purely additive so
+  // the default code path stays bit-for-bit identical when the gate is off
+  // or when provider !== 'openai'. The actual OpenAI implementation is a
+  // separate slice; today queryModelOpenAI yields a NotImplemented marker.
+  if (
+    isMultiProviderNormalizedEnabled() &&
+    getAPIProvider() === 'openai'
+  ) {
+    yield* queryModelOpenAI(
+      messages,
+      systemPrompt,
+      thinkingConfig,
+      tools,
+      signal,
+      options,
+    )
+    return
+  }
+
+  // Auto-routing for the Anthropic path. Same contract as the OpenAI path:
+  // - User-provided options.model that matches the registry → override decision,
+  //   banner reflects override, decision recorded.
+  // - User-provided model NOT in registry → silent pass-through (the relay
+  //   may accept it transparently; we don't claim a routing decision).
+  // - No explicit model → auto path picks a tier based on signals.
+  // We mutate options.model in place so all downstream computations
+  // (paramsFromContext, beta header merging, etc.) see the chosen id.
+  try {
+    const decision = decideModelForRequest({
+      userPromptText: extractLastUserText(messages),
+      historyTurnCount: messages.length,
+      hasImages: messagesContainImages(messages),
+      hasTools: tools.length > 0,
+      provider: 'anthropic',
+      explicitModel: options.model || undefined,
+    })
+    emitBannerForDecision(decision, {
+      userPromptText: extractLastUserText(messages),
+      historyTurnCount: messages.length,
+      hasImages: messagesContainImages(messages),
+      hasTools: tools.length > 0,
+      provider: 'anthropic',
+      explicitModel: options.model || undefined,
+    })
+    options.model = decision.model.id
+  } catch {
+    // Unknown explicit model — leave as-is, no banner, no log entry.
+  }
+
   // Derive previous request ID from the last assistant message in this query chain.
   // This is scoped per message array (main thread, subagent, teammate each have their own),
   // so concurrent agents don't clobber each other's request chain tracking.
@@ -1620,6 +1683,19 @@ async function* queryModel(
           thinkingConfig.budgetTokens !== undefined
         ) {
           thinkingBudget = thinkingConfig.budgetTokens
+        } else if (typeof effort === 'string') {
+          // Effort tier → thinking-budget mapping for opus-4-7 'xhigh' and
+          // friends. Without this, 'xhigh' collapses to the model default
+          // (identical to 'max'). The mapping is per Anthropic's thinking-
+          // config conventions; see utils/thinking.ts:getThinkingBudgetForEffort.
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          const { getThinkingBudgetForEffort } = require('../../utils/thinking.js') as {
+            getThinkingBudgetForEffort: (e: string | undefined) => number | undefined
+          }
+          const fromEffort = getThinkingBudgetForEffort(effort)
+          if (fromEffort !== undefined) {
+            thinkingBudget = fromEffort
+          }
         }
         thinkingBudget = Math.min(maxOutputTokens - 1, thinkingBudget)
         thinking = {

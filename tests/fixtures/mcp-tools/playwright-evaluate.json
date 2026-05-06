@@ -1,0 +1,23 @@
+{
+  "name": "mcp__playwright__browser_evaluate",
+  "description": "Evaluate a JS expression in the page context and return the result.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "expression": { "type": "string" },
+      "args": {
+        "type": "array",
+        "items": {
+          "anyOf": [
+            { "type": "string" },
+            { "type": "number" },
+            { "type": "boolean" },
+            { "type": "array" }
+          ]
+        }
+      }
+    },
+    "required": ["expression"]
+  },
+  "_source": "Playwright. Demonstrates anyOf branch where one alternative is an array missing items — recursion through anyOf required."
+}
