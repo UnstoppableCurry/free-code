@@ -37,7 +37,7 @@ curl -fsSL https://bun.sh/install | bash
 ### 主推：从 npm 全局安装
 
 ```bash
-npm install -g wtcc
+npm install -g @unstoppablecurry/wtcc
 ```
 
 > npm 安装的实际是一个 Node shim，shim 内部仍然调用 `bun` 运行编译后的 CLI，因此 Bun 必须先装好。
@@ -45,7 +45,7 @@ npm install -g wtcc
 ### 备选 1：用 bun 安装
 
 ```bash
-bun add -g wtcc
+bun add -g @unstoppablecurry/wtcc
 ```
 
 ### 备选 2：从源码安装（开发者）
@@ -128,7 +128,7 @@ wtcc --model claude-opus-4-7
 | `/version` | 当前构建版本 |
 | `/help` | 完整命令列表 |
 
-> `/upgrade` 是 **Anthropic Max plan 升级流程**，会打开 claude.ai —— 它 **不** 升级 wtcc 本身。升级 wtcc 用 `/update` 检查 + `npm i -g wtcc`。
+> `/upgrade` 是 **Anthropic Max plan 升级流程**，会打开 claude.ai —— 它 **不** 升级 wtcc 本身。升级 wtcc 用 `/update` 检查 + `npm i -g @unstoppablecurry/wtcc`。
 
 ---
 
@@ -214,6 +214,6 @@ ISC. 上游 Claude Code 源码版权属于 Anthropic；本 fork 只使用通过 
 - A self-healing OpenAI adapter (orphan tool_calls, parallel tool_calls, real token usage)
 - Dynamic `/model` menu and per-model `/effort` schemas
 
-Install with `npm install -g wtcc` (requires Bun ≥ 1.3 on PATH). For self-hosted Claude Code workflows behind an OpenAI-protocol relay, set `WTCC_RELAY_KEY` and run `./wtcc-zh.sh`. Full docs above in Chinese; commands and env vars are language-agnostic.
+Install with `npm install -g @unstoppablecurry/wtcc` (requires Bun ≥ 1.3 on PATH). For self-hosted Claude Code workflows behind an OpenAI-protocol relay, set `WTCC_RELAY_KEY` and run `./wtcc-zh.sh`. Full docs above in Chinese; commands and env vars are language-agnostic.
 
 PRs welcome at [github.com/UnstoppableCurry/free-code](https://github.com/UnstoppableCurry/free-code).
