@@ -4,13 +4,13 @@
   "description": "wtcc — Claude Code Chinese fork: multi-provider AI coding CLI (Anthropic + OpenAI relay) with zh-CN i18n, dynamic /model menu, per-model /effort routing. Built on paoloanzn/free-code.",
   "license": "ISC",
   "author": "UnstoppableCurry",
-  "homepage": "https://github.com/UnstoppableCurry/free-code#readme",
+  "homepage": "https://github.com/UnstoppableCurry/wtcc#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/UnstoppableCurry/free-code.git"
+    "url": "git+https://github.com/UnstoppableCurry/wtcc.git"
   },
   "bugs": {
-    "url": "https://github.com/UnstoppableCurry/free-code/issues"
+    "url": "https://github.com/UnstoppableCurry/wtcc/issues"
   },
   "keywords": [
     "claude",

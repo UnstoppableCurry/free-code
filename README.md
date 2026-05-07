@@ -5,7 +5,7 @@
 [![npm version](https://img.shields.io/npm/v/wtcc.svg)](https://www.npmjs.com/package/wtcc)
 [![npm license](https://img.shields.io/npm/l/wtcc.svg)](./LICENSE)
 [![node](https://img.shields.io/node/v/wtcc.svg)](https://www.npmjs.com/package/wtcc)
-[![GitHub stars](https://img.shields.io/github/stars/UnstoppableCurry/free-code?style=social)](https://github.com/UnstoppableCurry/free-code)
+[![GitHub stars](https://img.shields.io/github/stars/UnstoppableCurry/wtcc?style=social)](https://github.com/UnstoppableCurry/wtcc)
 [![Runtime: Bun](https://img.shields.io/badge/runtime-bun-orange)](https://bun.sh)
 
 `wtcc`（"WT Claude Code" 的缩写）是 **Claude Code 中文版** —— 在 [paoloanzn/free-code](https://github.com/paoloanzn/free-code)（一个可自行编译的 Claude Code 源码 fork）基础上做的中文本地化与多 provider 扩展。一句话定位：**一个 CLI 同时讲中文、同时调 Claude / GPT / Gemini / DeepSeek / Kimi / GLM / Qwen，并按 model 能力自动路由。**
@@ -51,7 +51,7 @@ bun add -g @unstoppablecurry/wtcc
 ### 备选 2：从源码安装（开发者）
 
 ```bash
-git clone https://github.com/UnstoppableCurry/free-code.git
+git clone https://github.com/UnstoppableCurry/wtcc.git
 cd free-code
 bun install
 bun run build      # 产出 ./cli
@@ -172,7 +172,7 @@ wtcc --model claude-opus-4-7
 ## 🛠️ Build from source / 从源码构建
 
 ```bash
-git clone https://github.com/UnstoppableCurry/free-code.git
+git clone https://github.com/UnstoppableCurry/wtcc.git
 cd free-code
 bun install
 bun run build           # 产出 ./cli
@@ -193,7 +193,7 @@ bun run build           # 产出 ./cli
 
 - 路线图：见 [TODO.md](./TODO.md)
 - 贡献指南：见 [CONTRIBUTING.md](./CONTRIBUTING.md)（包含 i18n 翻译规则、PR 约定、dev 环境搭建）
-- Issue / PR：[github.com/UnstoppableCurry/free-code](https://github.com/UnstoppableCurry/free-code)
+- Issue / PR：[github.com/UnstoppableCurry/wtcc](https://github.com/UnstoppableCurry/wtcc)
 
 欢迎 self-hosted Claude Code 场景下的实战反馈：哪个 relay 不能用、哪个 model 路由错了、哪段中文翻得别扭，都开 issue。
 
@@ -216,4 +216,4 @@ ISC. 上游 Claude Code 源码版权属于 Anthropic；本 fork 只使用通过 
 
 Install with `npm install -g @unstoppablecurry/wtcc` (requires Bun ≥ 1.3 on PATH). For self-hosted Claude Code workflows behind an OpenAI-protocol relay, set `WTCC_RELAY_KEY` and run `./wtcc-zh.sh`. Full docs above in Chinese; commands and env vars are language-agnostic.
 
-PRs welcome at [github.com/UnstoppableCurry/free-code](https://github.com/UnstoppableCurry/free-code).
+PRs welcome at [github.com/UnstoppableCurry/wtcc](https://github.com/UnstoppableCurry/wtcc).

@@ -15,7 +15,7 @@
 ### 克隆 + 安装
 
 ```bash
-git clone https://github.com/UnstoppableCurry/free-code.git
+git clone https://github.com/UnstoppableCurry/wtcc.git
 cd free-code
 bun install
 ```
