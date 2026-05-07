@@ -16,7 +16,7 @@
 
 ```bash
 git clone https://github.com/UnstoppableCurry/wtcc.git
-cd free-code
+cd wtcc
 bun install
 ```
 

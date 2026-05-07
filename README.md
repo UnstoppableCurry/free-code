@@ -52,7 +52,7 @@ bun add -g @unstoppablecurry/wtcc
 
 ```bash
 git clone https://github.com/UnstoppableCurry/wtcc.git
-cd free-code
+cd wtcc
 bun install
 bun run build      # 产出 ./cli
 ./wtcc-zh.sh       # 中文模式启动
@@ -173,7 +173,7 @@ wtcc --model claude-opus-4-7
 
 ```bash
 git clone https://github.com/UnstoppableCurry/wtcc.git
-cd free-code
+cd wtcc
 bun install
 bun run build           # 产出 ./cli
 ./cli                   # 直接跑
