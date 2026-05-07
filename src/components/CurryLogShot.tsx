@@ -1,262 +1,583 @@
-// /curry —— 100 帧 4 秒火柴人三分动画。
+// /curry —— 2016-02-27 GSW@OKC 库里 logo 三分压哨绝杀 ASCII 还原。
 //
-// 实现：drawille-canvas 提供 Canvas2D-like API → 我描述场景（火柴人姿势 /
-// 球轨迹 / 镜头偏移），库光栅化为 Braille 字符。模块加载时一次性生成
-// 100 帧字符串放进 FRAMES，setInterval 40ms 切帧。
+// 真实事实参考：
+//   - 加时赛剩 ~5s，比分 118-118 平
+//   - 防守人 Andre Roberson #21（不是 Westbrook）
+//   - 库里推进过半场，3 次运球后 38-ft pull-up
+//   - 球离手剩 0.6s → swish 破网 → 尖叫 + signature shimmy 抖肩
+//   - 终场 GSW 121 - OKC 118
 //
-// 故事板：
-//   t∈[0, 0.20)  Crossover —— 运球、晃过、防守者倒地
-//   t∈[0.20, 0.40)  Pull-up —— 收球、起跳、出手
-//   t∈[0.40, 0.95)  飞行 + 镜头跟球 —— 抛物线轨迹，camera lock 球居中
-//   t∈[0.95, 1.00]  穿网 + BANG!
+// 艺术加工：前段加 between-the-legs + behind-the-back 各一次（"双背后"
+// 视觉记忆），主出手严格 pull-up 38ft。
+//
+// 实现：drawille-canvas（2x4 Braille 像素栅格）+ 自适应终端尺寸：
+//   像素尺寸 W = (cols-2)*2, H = (rows-3)*4，留 caption + subline 行。
+//   FRAMES 根据 W/H useMemo 重新生成，120 帧 × 35ms ≈ 4.2s。
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Text } from '../ink.js'
+import { TerminalSizeContext } from '../ink/components/TerminalSizeContext.js'
 // @ts-expect-error - drawille-canvas has no bundled types
 import Canvas from 'drawille-canvas'
 
-const VIEW_W = 180
-const VIEW_H = 80
-const GROUND_Y = 72
+const TOTAL_FRAMES = 120
+const FRAME_MS = 35
 
-type ArmsPose = 'down' | 'cross' | 'up' | 'flail'
-type LegsPose = 'stance' | 'wide' | 'jump' | 'fallen'
+type Phase =
+  | 'walkup'
+  | 'between-legs'
+  | 'behind-back'
+  | 'gather'
+  | 'release'
+  | 'flight'
+  | 'splash'
+  | 'shimmy'
 
-function drawFigure(
+type SceneInputs = {
+  W: number
+  H: number
+  t: number
+}
+
+type Scene = {
+  canvas: string
+  caption: string
+  subline: string
+  color: 'cyan' | 'yellow' | 'green' | 'magenta' | 'white'
+}
+
+function strokeCircle(
   ctx: any,
-  x: number,
+  cx: number,
+  cy: number,
+  r: number,
+  segs = 24,
+): void {
+  ctx.beginPath()
+  for (let i = 0; i <= segs; i++) {
+    const a = (i / segs) * Math.PI * 2
+    const x = cx + Math.cos(a) * r
+    const y = cy + Math.sin(a) * r
+    if (i === 0) ctx.moveTo(x, y)
+    else ctx.lineTo(x, y)
+  }
+  ctx.stroke()
+}
+
+function strokeArc(
+  ctx: any,
+  cx: number,
+  cy: number,
+  r: number,
+  a0: number,
+  a1: number,
+  segs = 24,
+): void {
+  ctx.beginPath()
+  for (let i = 0; i <= segs; i++) {
+    const a = a0 + ((a1 - a0) * i) / segs
+    const x = cx + Math.cos(a) * r
+    const y = cy + Math.sin(a) * r
+    if (i === 0) ctx.moveTo(x, y)
+    else ctx.lineTo(x, y)
+  }
+  ctx.stroke()
+}
+
+// 球场场景（俯视斜视角）：底线、三分弧、罚球线、篮筐 + 篮板。
+// camera = 0 表示标准镜头；正值表示镜头向右滚（跟球）。
+function drawCourt(
+  ctx: any,
+  W: number,
+  H: number,
+  cameraX: number,
+  showLogo: boolean,
+): void {
+  const groundY = Math.floor(H * 0.86)
+  // 底部地板线
+  ctx.beginPath()
+  ctx.moveTo(0, groundY)
+  ctx.lineTo(W, groundY)
+  ctx.stroke()
+  // 观众席（底部点阵 —— OKC 主场全员战栗）
+  for (let x = 0; x < W; x += 3) {
+    const noise = ((x * 73856093) ^ 0x9e3779b9) & 7
+    const y = groundY + 4 + (noise % 3)
+    if (y < H - 1) {
+      ctx.beginPath()
+      ctx.arc(x, y, 0.6, 0, Math.PI * 2)
+      ctx.stroke()
+    }
+  }
+  // 三分弧线（标准 NBA 23.75ft 距离 → 弧形）
+  const rimX = W - 18 - cameraX
+  const rimY = groundY - Math.floor(H * 0.30)
+  if (rimX > -10 && rimX < W + 10) {
+    strokeArc(ctx, rimX, groundY, Math.floor(H * 0.55), Math.PI, Math.PI * 2)
+    // 罚球线（半圆）
+    strokeArc(
+      ctx,
+      rimX - Math.floor(H * 0.18),
+      groundY,
+      Math.floor(H * 0.18),
+      Math.PI,
+      Math.PI * 2,
+      16,
+    )
+    // 篮板
+    ctx.beginPath()
+    ctx.moveTo(rimX + 4, rimY - Math.floor(H * 0.10))
+    ctx.lineTo(rimX + 4, rimY + 2)
+    ctx.stroke()
+    // 篮筐
+    ctx.beginPath()
+    ctx.moveTo(rimX - 3, rimY)
+    ctx.lineTo(rimX + 3, rimY)
+    ctx.stroke()
+    // 网
+    ctx.beginPath()
+    ctx.moveTo(rimX - 3, rimY)
+    ctx.lineTo(rimX - 1, rimY + 5)
+    ctx.moveTo(rimX + 3, rimY)
+    ctx.lineTo(rimX + 1, rimY + 5)
+    ctx.moveTo(rimX - 1, rimY + 5)
+    ctx.lineTo(rimX + 1, rimY + 5)
+    ctx.stroke()
+    // 篮架立柱
+    ctx.beginPath()
+    ctx.moveTo(rimX + 4, rimY + 2)
+    ctx.lineTo(rimX + 4, groundY)
+    ctx.stroke()
+  }
+  // 中场圆 + GSW logo（半场标志）：双环 + 内部"GSW" 字母轮廓化
+  if (showLogo) {
+    const logoX = Math.floor(W * 0.42) - cameraX
+    const logoY = groundY - 3
+    if (logoX > -20 && logoX < W + 20) {
+      strokeCircle(ctx, logoX, logoY, 10)
+      strokeCircle(ctx, logoX, logoY, 6)
+      // 内部三角斜杠标记（Curry 跨过来的方向感）
+      ctx.beginPath()
+      ctx.moveTo(logoX - 4, logoY + 2)
+      ctx.lineTo(logoX + 4, logoY - 2)
+      ctx.moveTo(logoX - 4, logoY - 2)
+      ctx.lineTo(logoX + 4, logoY + 2)
+      ctx.stroke()
+    }
+  }
+}
+
+// （旧 scoreboard 外框已删 —— caption/subline 文本行已承载比分时间，
+// 外框只是空盒抢视线，去掉换更干净的画面。）
+
+type ArmsPose =
+  | 'dribble-r'
+  | 'dribble-l'
+  | 'between'
+  | 'behind'
+  | 'gather'
+  | 'release'
+  | 'follow'
+  | 'cheer-low'
+  | 'cheer-high'
+  | 'reach'
+  | 'reach-fallen'
+
+type LegsPose = 'stance' | 'wide' | 'jump' | 'land' | 'side-step'
+
+function drawPlayer(
+  ctx: any,
+  cx: number,
   feetY: number,
   arms: ArmsPose,
   legs: LegsPose,
-  jumpY: number = 0,
+  jumpY: number,
+  facing: 1 | -1,
+  jersey: '30' | '21' | '',
 ): void {
-  const headY = feetY - 30 + jumpY
+  const headR = 3
+  const headY = feetY - 18 + jumpY
+  const torsoTop = headY + headR
+  const torsoBot = torsoTop + 8
+  const hipY = torsoBot
+  strokeCircle(ctx, cx, headY, headR, 12)
   ctx.beginPath()
-  ctx.arc(x, headY, 4, 0, Math.PI * 2)
-  ctx.moveTo(x, headY + 4)
-  ctx.lineTo(x, headY + 18)
-  if (arms === 'up') {
-    ctx.moveTo(x, headY + 6)
-    ctx.lineTo(x - 7, headY - 8)
-    ctx.moveTo(x, headY + 6)
-    ctx.lineTo(x + 7, headY - 8)
-  } else if (arms === 'cross') {
-    ctx.moveTo(x, headY + 8)
-    ctx.lineTo(x - 13, headY + 6)
-    ctx.moveTo(x, headY + 8)
-    ctx.lineTo(x + 13, headY + 6)
-  } else if (arms === 'flail') {
-    ctx.moveTo(x, headY + 6)
-    ctx.lineTo(x - 15, headY - 2)
-    ctx.moveTo(x, headY + 6)
-    ctx.lineTo(x + 15, headY - 6)
-  } else {
-    ctx.moveTo(x, headY + 8)
-    ctx.lineTo(x - 6, headY + 17)
-    ctx.moveTo(x, headY + 8)
-    ctx.lineTo(x + 6, headY + 17)
-  }
-  if (legs === 'jump') {
-    ctx.moveTo(x, headY + 18)
-    ctx.lineTo(x - 4, headY + 24)
-    ctx.moveTo(x, headY + 18)
-    ctx.lineTo(x + 4, headY + 24)
-  } else if (legs === 'wide') {
-    ctx.moveTo(x, headY + 18)
-    ctx.lineTo(x - 9, feetY)
-    ctx.moveTo(x, headY + 18)
-    ctx.lineTo(x + 9, feetY)
-  } else if (legs === 'fallen') {
-    ctx.moveTo(x, headY + 18)
-    ctx.lineTo(x + 14, headY + 16)
-    ctx.moveTo(x, headY + 18)
-    ctx.lineTo(x + 10, headY + 22)
-  } else {
-    ctx.moveTo(x, headY + 18)
-    ctx.lineTo(x - 4, feetY)
-    ctx.moveTo(x, headY + 18)
-    ctx.lineTo(x + 4, feetY)
-  }
+  ctx.arc(cx - 1, headY - 0.5, 0.4, 0, Math.PI * 2)
+  ctx.arc(cx + 1, headY - 0.5, 0.4, 0, Math.PI * 2)
   ctx.stroke()
-}
-
-function drawBall(ctx: any, x: number, y: number, r: number = 3): void {
   ctx.beginPath()
-  ctx.arc(x, y, r, 0, Math.PI * 2)
+  ctx.moveTo(cx, torsoTop)
+  ctx.lineTo(cx, torsoBot)
   ctx.stroke()
-}
-
-function drawRim(ctx: any, x: number, rimY: number): void {
-  ctx.beginPath()
-  ctx.moveTo(x - 16, rimY - 14)
-  ctx.lineTo(x + 16, rimY - 14)
-  ctx.lineTo(x + 16, rimY + 4)
-  ctx.lineTo(x - 16, rimY + 4)
-  ctx.lineTo(x - 16, rimY - 14)
-  ctx.moveTo(x - 11, rimY)
-  ctx.lineTo(x + 11, rimY)
-  ctx.moveTo(x - 9, rimY)
-  ctx.lineTo(x - 5, rimY + 12)
-  ctx.moveTo(x + 9, rimY)
-  ctx.lineTo(x + 5, rimY + 12)
-  ctx.moveTo(x - 5, rimY + 12)
-  ctx.lineTo(x + 5, rimY + 12)
-  ctx.moveTo(x, rimY + 4)
-  ctx.lineTo(x, GROUND_Y)
-  ctx.stroke()
-}
-
-function drawGround(ctx: any, cameraX: number): void {
-  ctx.beginPath()
-  ctx.moveTo(0, GROUND_Y)
-  ctx.lineTo(VIEW_W, GROUND_Y)
-  ctx.stroke()
-  const halfX = 80 - cameraX
-  if (halfX > 0 && halfX < VIEW_W) {
+  if (jersey !== '') {
     ctx.beginPath()
-    ctx.moveTo(halfX, GROUND_Y - 4)
-    ctx.lineTo(halfX, GROUND_Y + 4)
+    ctx.moveTo(cx - 1.5, torsoTop + 2)
+    ctx.lineTo(cx + 1.5, torsoTop + 2)
+    ctx.lineTo(cx + 1.5, torsoTop + 5)
+    ctx.lineTo(cx - 1.5, torsoTop + 5)
+    ctx.lineTo(cx - 1.5, torsoTop + 2)
     ctx.stroke()
   }
+  const shoulderY = torsoTop + 1
+  switch (arms) {
+    case 'dribble-r':
+      ctx.beginPath()
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx + 4 * facing, shoulderY + 6)
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx - 3 * facing, shoulderY + 4)
+      ctx.stroke()
+      break
+    case 'dribble-l':
+      ctx.beginPath()
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx - 4 * facing, shoulderY + 6)
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx + 3 * facing, shoulderY + 4)
+      ctx.stroke()
+      break
+    case 'between':
+      ctx.beginPath()
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx - 2, shoulderY + 7)
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx + 2, shoulderY + 7)
+      ctx.stroke()
+      break
+    case 'behind':
+      ctx.beginPath()
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx + 5, shoulderY + 2)
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx - 5, shoulderY + 2)
+      ctx.stroke()
+      break
+    case 'gather':
+      ctx.beginPath()
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx - 3, shoulderY + 3)
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx + 3, shoulderY + 3)
+      ctx.stroke()
+      break
+    case 'release':
+      ctx.beginPath()
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx + 4 * facing, headY - 3)
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx - 2 * facing, headY - 1)
+      ctx.stroke()
+      break
+    case 'follow':
+      ctx.beginPath()
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx + 3 * facing, headY - 5)
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx - 2 * facing, headY - 3)
+      ctx.stroke()
+      break
+    case 'cheer-low':
+      ctx.beginPath()
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx - 6, shoulderY + 5)
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx + 6, shoulderY + 5)
+      ctx.stroke()
+      break
+    case 'cheer-high':
+      ctx.beginPath()
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx - 6, headY - 4)
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx + 6, headY - 4)
+      ctx.stroke()
+      break
+    case 'reach':
+      ctx.beginPath()
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx + 7 * facing, headY - 6)
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx + 4 * facing, headY - 2)
+      ctx.stroke()
+      break
+    case 'reach-fallen':
+      ctx.beginPath()
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx + 9, shoulderY + 1)
+      ctx.moveTo(cx, shoulderY)
+      ctx.lineTo(cx - 6, shoulderY + 4)
+      ctx.stroke()
+      break
+  }
+  switch (legs) {
+    case 'stance':
+      ctx.beginPath()
+      ctx.moveTo(cx, hipY)
+      ctx.lineTo(cx - 3, feetY)
+      ctx.moveTo(cx, hipY)
+      ctx.lineTo(cx + 3, feetY)
+      ctx.stroke()
+      break
+    case 'wide':
+      ctx.beginPath()
+      ctx.moveTo(cx, hipY)
+      ctx.lineTo(cx - 7, feetY)
+      ctx.moveTo(cx, hipY)
+      ctx.lineTo(cx + 7, feetY)
+      ctx.stroke()
+      break
+    case 'jump':
+      ctx.beginPath()
+      ctx.moveTo(cx, hipY)
+      ctx.lineTo(cx - 3, hipY + 5)
+      ctx.moveTo(cx, hipY)
+      ctx.lineTo(cx + 3, hipY + 5)
+      ctx.stroke()
+      break
+    case 'land':
+      ctx.beginPath()
+      ctx.moveTo(cx, hipY)
+      ctx.lineTo(cx - 5, feetY - 1)
+      ctx.moveTo(cx, hipY)
+      ctx.lineTo(cx + 5, feetY)
+      ctx.stroke()
+      break
+    case 'side-step':
+      ctx.beginPath()
+      ctx.moveTo(cx, hipY)
+      ctx.lineTo(cx - 6 * facing, feetY)
+      ctx.moveTo(cx, hipY)
+      ctx.lineTo(cx + 2 * facing, feetY)
+      ctx.stroke()
+      break
+  }
 }
 
-function generateFrame(t: number): { canvas: string; caption: string } {
-  const C = new (Canvas as any)(VIEW_W, VIEW_H)
+function drawBall(ctx: any, x: number, y: number, r = 2.6): void {
+  ctx.beginPath()
+  ctx.arc(x, y, r, 0, Math.PI * 2)
+  ctx.moveTo(x - r, y)
+  ctx.lineTo(x + r, y)
+  ctx.moveTo(x, y - r)
+  ctx.lineTo(x, y + r)
+  ctx.stroke()
+}
+
+export function generateScene({ W, H, t }: SceneInputs): Scene {
+  const C = new (Canvas as any)(W, H)
   const ctx = C.getContext('2d')
 
-  let caption = ''
+  const groundY = Math.floor(H * 0.86)
+  const logoCenterX = Math.floor(W * 0.42)
+  const rimWorldX = W - 18
 
-  if (t < 0.2) {
-    const phase = t / 0.2
-    const curryWX = 50
-    const defWX = 100
-    let curryArms: ArmsPose = 'down'
-    let curryLegs: LegsPose = 'stance'
-    let curryX = curryWX
-    let ballWX = curryWX + 9
-    let ballY = GROUND_Y - 14
-    let defArms: ArmsPose = 'cross'
-    let defLegs: LegsPose = 'stance'
-
-    if (phase < 0.4) {
-      const sub = phase / 0.4
-      ballY = GROUND_Y - 14 - Math.abs(Math.sin(sub * 14)) * 7
-      caption = 'wtcc · 半场 logo 三分'
-    } else if (phase < 0.72) {
-      const sub = (phase - 0.4) / 0.32
-      ballWX = curryWX + 9 - sub * 18
-      ballY = GROUND_Y - 6 - Math.sin(sub * Math.PI) * 9
-      curryArms = 'cross'
-      curryLegs = 'wide'
-      caption = 'wtcc · 晃 →'
-    } else {
-      const sub = (phase - 0.72) / 0.28
-      curryX = curryWX + sub * 18
-      ballWX = curryX - 9 + sub * 13
-      ballY = GROUND_Y - 14 - Math.abs(Math.sin(sub * 10)) * 6
-      defArms = 'flail'
-      defLegs = 'fallen'
-      caption = 'wtcc · 突破!'
-    }
-
-    drawGround(ctx, 0)
-    drawFigure(ctx, curryX, GROUND_Y, curryArms, curryLegs)
-    drawFigure(ctx, defWX, GROUND_Y, defArms, defLegs)
-    drawBall(ctx, ballWX, ballY)
-  } else if (t < 0.4) {
-    const phase = (t - 0.2) / 0.2
-    const curryX = 70
-    let curryArms: ArmsPose = 'down'
-    let curryLegs: LegsPose = 'stance'
-    let jumpY = 0
-    let ballX = curryX + 7
-    let ballY = GROUND_Y - 14
-
-    if (phase < 0.4) {
-      const sub = phase / 0.4
-      ballY = GROUND_Y - 14 - sub * 16
-      curryArms = sub > 0.55 ? 'up' : 'down'
-      curryLegs = sub > 0.75 ? 'jump' : 'stance'
-      jumpY = -sub * 5
-      caption = 'wtcc · 拉杆'
-    } else if (phase < 0.72) {
-      const sub = (phase - 0.4) / 0.32
-      ballY = GROUND_Y - 30 - sub * 8
-      ballX = curryX + 5 - sub * 4
-      curryArms = 'up'
-      curryLegs = 'jump'
-      jumpY = -8 - sub * 5
-      caption = 'wtcc · 起跳'
-    } else {
-      const sub = (phase - 0.72) / 0.28
-      ballY = GROUND_Y - 38 - sub * 4
-      ballX = curryX + 1 + sub * 14
-      curryArms = 'up'
-      curryLegs = 'jump'
-      jumpY = -13
-      caption = 'wtcc · 出手!'
-    }
-
-    drawGround(ctx, 0)
-    drawFigure(ctx, curryX, GROUND_Y, curryArms, curryLegs, jumpY)
-    drawBall(ctx, ballX, ballY)
-  } else if (t < 0.95) {
-    const phase = (t - 0.4) / 0.55
-    const ballWX_start = 90
-    const ballWX_end = 400
-    const ballWX = ballWX_start + phase * (ballWX_end - ballWX_start)
-    const releaseY = GROUND_Y - 38
-    const rimY = GROUND_Y - 30
-    const apexBoost = 32
-    const ballY =
-      (1 - phase) * releaseY + phase * rimY - apexBoost * 4 * phase * (1 - phase)
-    const ease = Math.min(1, phase / 0.18)
-    const cameraX = ease * (ballWX - VIEW_W / 2)
-
-    drawGround(ctx, cameraX)
-    const playerScreenX = 70 - cameraX
-    if (playerScreenX > -20 && playerScreenX < VIEW_W + 20) {
-      drawFigure(ctx, playerScreenX, GROUND_Y, 'up', 'jump', -13)
-    }
-    const rimScreenX = 400 - cameraX
-    if (rimScreenX > -30 && rimScreenX < VIEW_W + 30) {
-      drawRim(ctx, rimScreenX, rimY)
-    }
-    drawBall(ctx, ballWX - cameraX, ballY)
-
-    caption =
-      phase < 0.3 ? 'wtcc · 出手 →' : phase < 0.7 ? '~ 弧线 ~' : '~ 落下 ~'
-  } else {
-    const phase = (t - 0.95) / 0.05
-    const rimScreenX = VIEW_W / 2
-    const rimY = GROUND_Y - 30
-    drawGround(ctx, 400 - VIEW_W / 2)
-    drawRim(ctx, rimScreenX, rimY)
-    const ballY = rimY + phase * 18
-    drawBall(ctx, rimScreenX, ballY, 3)
-    caption = phase > 0.5 ? '★ BANG! 3PT! ★' : 'wtcc · 进!'
+  const T = {
+    walkup: [0.0, 0.12] as const,
+    between: [0.12, 0.22] as const,
+    behind: [0.22, 0.32] as const,
+    settle: [0.32, 0.42] as const,
+    gather: [0.42, 0.50] as const,
+    release: [0.50, 0.58] as const,
+    flight: [0.58, 0.86] as const,
+    splash: [0.86, 0.92] as const,
+    shimmy: [0.92, 1.0] as const,
   }
 
-  return { canvas: C.toString(), caption }
+  let phase: Phase = 'walkup'
+  let curryX = logoCenterX
+  let curryArms: ArmsPose = 'dribble-r'
+  let curryLegs: LegsPose = 'stance'
+  let curryJumpY = 0
+  let robArms: ArmsPose = 'reach'
+  let robLegs: LegsPose = 'stance'
+  let robX = logoCenterX + 18
+  let ballX = curryX + 4
+  let ballY = groundY - 4
+  let cameraX = 0
+  let caption = ''
+  let subline = ''
+  let color: Scene['color'] = 'cyan'
+
+  if (t < T.walkup[1]) {
+    phase = 'walkup'
+    const u = (t - T.walkup[0]) / (T.walkup[1] - T.walkup[0])
+    curryX = Math.floor(W * 0.18 + u * (logoCenterX - W * 0.18))
+    curryArms = 'dribble-r'
+    curryLegs = u < 0.5 ? 'stance' : 'wide'
+    ballX = curryX + 4
+    ballY = groundY - 4 - Math.abs(Math.sin(u * Math.PI * 4)) * 4
+    robX = curryX + 14 + (1 - u) * 4
+    caption = '0:00.5 OT · GSW 118 - OKC 118'
+    subline = '库里推进过半场 · #21 Roberson 退防中…'
+    color = 'cyan'
+  } else if (t < T.between[1]) {
+    phase = 'between-legs'
+    const u = (t - T.between[0]) / (T.between[1] - T.between[0])
+    curryX = logoCenterX
+    curryLegs = 'wide'
+    curryArms = u < 0.5 ? 'between' : 'dribble-l'
+    ballX = curryX + 3 - u * 6
+    ballY = groundY - 6 + Math.sin(u * Math.PI) * 2
+    robX = curryX + 12
+    robArms = 'reach'
+    caption = '0:00.5 OT · 跨下！'
+    subline = '胯下换手 ↔ Roberson 重心被骗'
+    color = 'magenta'
+  } else if (t < T.behind[1]) {
+    phase = 'behind-back'
+    const u = (t - T.behind[0]) / (T.behind[1] - T.behind[0])
+    curryX = logoCenterX + Math.floor(u * 3)
+    curryLegs = 'wide'
+    curryArms = u < 0.5 ? 'behind' : 'dribble-r'
+    ballX = curryX - 3 + u * 7
+    ballY = groundY - 9 + Math.sin(u * Math.PI) * 3
+    robX = curryX + 11 + u * 1
+    robArms = 'reach'
+    robLegs = u > 0.6 ? 'side-step' : 'wide'
+    caption = '0:00.5 OT · 背后！'
+    subline = '背后换手 → 这都不是终点…'
+    color = 'magenta'
+  } else if (t < T.settle[1]) {
+    phase = 'walkup'
+    const u = (t - T.settle[0]) / (T.settle[1] - T.settle[0])
+    curryX = logoCenterX + 3
+    curryLegs = 'wide'
+    curryArms = 'dribble-r'
+    ballX = curryX + 4
+    ballY = groundY - 5 - Math.abs(Math.sin(u * Math.PI * 2)) * 5
+    robX = curryX + 11
+    robArms = 'reach'
+    caption = '38ft 处 · 第 3 次运球'
+    subline = '"我刚过半场就知道我要投了"'
+    color = 'cyan'
+  } else if (t < T.gather[1]) {
+    phase = 'gather'
+    const u = (t - T.gather[0]) / (T.gather[1] - T.gather[0])
+    curryX = logoCenterX + 3
+    curryLegs = u < 0.5 ? 'wide' : 'stance'
+    curryArms = 'gather'
+    curryJumpY = -u * 2
+    ballX = curryX
+    ballY = groundY - 14 - u * 6
+    robX = curryX + 10
+    robArms = 'reach'
+    robLegs = 'wide'
+    caption = '收球 · 准备出手'
+    subline = '0:00.6 ←'
+    color = 'yellow'
+  } else if (t < T.release[1]) {
+    phase = 'release'
+    const u = (t - T.release[0]) / (T.release[1] - T.release[0])
+    curryX = logoCenterX + 3
+    curryLegs = 'jump'
+    curryArms = u < 0.5 ? 'release' : 'follow'
+    curryJumpY = -2 - u * 4
+    const startBX = curryX + 2
+    const startBY = groundY - 22 + curryJumpY
+    ballX = startBX + u * 6
+    ballY = startBY - u * 4
+    robX = curryX + 9
+    robArms = 'reach'
+    robLegs = 'jump'
+    caption = u < 0.5 ? '出手！' : '38 英尺！'
+    subline = 'Roberson 跳起也够不到…'
+    color = 'yellow'
+  } else if (t < T.flight[1]) {
+    phase = 'flight'
+    const u = (t - T.flight[0]) / (T.flight[1] - T.flight[0])
+    const startX = logoCenterX + 8
+    const startY = groundY - 28
+    const endX = rimWorldX
+    const endY = groundY - Math.floor(H * 0.30)
+    const apexBoost = Math.floor(H * 0.18)
+    const wx = startX + u * (endX - startX)
+    const wy = (1 - u) * startY + u * endY - apexBoost * 4 * u * (1 - u)
+    const ease = Math.min(1, u / 0.25)
+    cameraX = ease * (wx - W / 2)
+    cameraX = Math.max(0, Math.min(cameraX, endX - W * 0.7))
+    ballX = wx - cameraX
+    ballY = wy
+    curryX = logoCenterX + 3 - cameraX
+    curryArms = 'follow'
+    curryLegs = 'land'
+    curryJumpY = -1
+    robX = logoCenterX + 12 - cameraX
+    robArms = 'reach'
+    robLegs = 'land'
+    caption = u < 0.4 ? '弧线飞翔…' : u < 0.8 ? '~~~~ 好高的弧 ~~~~' : '准 · 心 · 入 · 网'
+    subline = '加时绝杀就在眼前'
+    color = 'green'
+  } else if (t < T.splash[1]) {
+    phase = 'splash'
+    const u = (t - T.splash[0]) / (T.splash[1] - T.splash[0])
+    cameraX = Math.max(0, rimWorldX - W * 0.7)
+    const rimY = groundY - Math.floor(H * 0.30)
+    ballX = rimWorldX - cameraX
+    ballY = rimY + u * 8
+    caption = '★  BANG! BANG!  ★'
+    subline = '0:00.0 · GSW 121 - OKC 118'
+    color = 'green'
+  } else {
+    phase = 'shimmy'
+    const u = (t - T.shimmy[0]) / (T.shimmy[1] - T.shimmy[0])
+    cameraX = 0
+    curryX = logoCenterX + 3 + Math.sin(u * Math.PI * 6) * 2
+    curryLegs = 'stance'
+    curryArms = u % 0.4 < 0.2 ? 'cheer-high' : 'cheer-low'
+    curryJumpY = 0
+    robX = -50
+    ballX = -50
+    ballY = -50
+    caption = '🏀 SHIMMY · 抖肩 · 走人 🏀'
+    subline = 'Curry 的代表作 · 改变历史的一投'
+    color = 'yellow'
+  }
+
+  const showLogo = phase !== 'flight' && phase !== 'splash'
+  drawCourt(ctx, W, H, cameraX, showLogo)
+
+  if (robX > -10 && robX < W + 10 && phase !== 'shimmy') {
+    drawPlayer(ctx, robX, groundY, robArms, robLegs, 0, -1, '21')
+  }
+  if (curryX > -10 && curryX < W + 10) {
+    drawPlayer(
+      ctx,
+      curryX,
+      groundY,
+      curryArms,
+      curryLegs,
+      curryJumpY,
+      1,
+      '30',
+    )
+  }
+  if (ballX > -5 && ballX < W + 5 && ballY > -5) {
+    drawBall(ctx, ballX, ballY)
+  }
+
+  return { canvas: C.toString(), caption, subline, color }
 }
 
-const TOTAL_FRAMES = 100
-
-const FRAMES: ReadonlyArray<{ canvas: string; caption: string }> = Array.from(
-  { length: TOTAL_FRAMES },
-  (_, i) => generateFrame(i / (TOTAL_FRAMES - 1)),
-)
-
-const FRAME_MS = 40
-
 export type CurryLogShotProps = {
-  /** 抵达最后一帧后回调（驻留期由调用方决定）。 */
   onDone?: () => void
-  /** 跳过动画，直接停在最终帧（非 TTY / 测试场景）。 */
   static?: boolean
 }
 
 export function CurryLogShot(props: CurryLogShotProps): React.ReactNode {
+  const size = useContext(TerminalSizeContext)
+  const cols = size?.columns ?? process.stdout.columns ?? 100
+  const rows = size?.rows ?? process.stdout.rows ?? 30
+  const W = Math.max(120, Math.min(420, (cols - 2) * 2))
+  const H = Math.max(60, Math.min(160, (rows - 4) * 4))
+
+  const FRAMES = useMemo<Scene[]>(
+    () =>
+      Array.from({ length: TOTAL_FRAMES }, (_, i) =>
+        generateScene({ W, H, t: i / (TOTAL_FRAMES - 1) }),
+      ),
+    [W, H],
+  )
+
   const [idx, setIdx] = useState(0)
   const onDoneRef = useRef(props.onDone)
   const staticRef = useRef(props.static)
@@ -285,7 +606,7 @@ export function CurryLogShot(props: CurryLogShotProps): React.ReactNode {
       })
     }, FRAME_MS)
     return () => clearInterval(interval)
-  }, [])
+  }, [FRAMES.length])
 
   const frame = FRAMES[props.static ? FRAMES.length - 1 : idx]!
   const lines = frame.canvas.split('\n')
@@ -293,11 +614,16 @@ export function CurryLogShot(props: CurryLogShotProps): React.ReactNode {
   return (
     <Box flexDirection="column">
       {lines.map((line, i) => (
-        <Text key={i} color="cyan">
+        <Text key={i} color={frame.color}>
           {line}
         </Text>
       ))}
-      <Text color="yellow">{`            ${frame.caption}`}</Text>
+      <Text color="yellow" bold>
+        {`            ${frame.caption}`}
+      </Text>
+      <Text color="white" dimColor>
+        {`            ${frame.subline}`}
+      </Text>
     </Box>
   )
 }
