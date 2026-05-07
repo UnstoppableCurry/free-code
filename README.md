@@ -2,15 +2,29 @@
 
 > Claude Code 中文化 + 多 provider 兼容 + 自动 model 路由的开源 CLI
 
-[![npm version](https://img.shields.io/npm/v/wtcc.svg)](https://www.npmjs.com/package/wtcc)
-[![npm license](https://img.shields.io/npm/l/wtcc.svg)](./LICENSE)
-[![node](https://img.shields.io/node/v/wtcc.svg)](https://www.npmjs.com/package/wtcc)
+[![npm version](https://img.shields.io/npm/v/@unstoppablecurry/wtcc.svg)](https://www.npmjs.com/package/@unstoppablecurry/wtcc)
+[![npm license](https://img.shields.io/npm/l/@unstoppablecurry/wtcc.svg)](./LICENSE)
+[![node](https://img.shields.io/node/v/@unstoppablecurry/wtcc.svg)](https://www.npmjs.com/package/@unstoppablecurry/wtcc)
 [![GitHub stars](https://img.shields.io/github/stars/UnstoppableCurry/wtcc?style=social)](https://github.com/UnstoppableCurry/wtcc)
 [![Runtime: Bun](https://img.shields.io/badge/runtime-bun-orange)](https://bun.sh)
 
-`wtcc`（"WT Claude Code" 的缩写）是 **Claude Code 中文版** —— 在 [paoloanzn/free-code](https://github.com/paoloanzn/free-code)（一个可自行编译的 Claude Code 源码 fork）基础上做的中文本地化与多 provider 扩展。一句话定位：**一个 CLI 同时讲中文、同时调 Claude / GPT / Gemini / DeepSeek / Kimi / GLM / Qwen，并按 model 能力自动路由。**
+`wtcc`（"WT Claude Code" 的缩写）是 **Claude Code 中文版** —— 基于 [paoloanzn/free-code](https://github.com/paoloanzn/free-code)（可自行编译的 Claude Code 源码 fork）**深度增强**而来，专攻中文用户和多 provider 场景。一句话定位：**一个 CLI 同时讲中文、同时调 Claude / GPT / Gemini / DeepSeek / Kimi / GLM / Qwen，并按 model 能力自动路由。**
 
 > 关键词（SEO）：Claude Code 中文版 · Claude Code Chinese fork · multi-provider AI CLI · OpenAI Anthropic relay CLI · self-hosted Claude Code · 自建 Claude Code · AI coding assistant 中文。
+
+## 🚀 为什么用 wtcc 而不是 free-code？
+
+| 你想干的事 | upstream `free-code` | **`wtcc`（这个项目）** |
+|---|---|---|
+| 用中文 CLI 干活 | ❌ 全英文 | ✅ banner / 命令 / 错误提示 / 日志全中文，~378 个 i18n key |
+| 用 GPT / Gemini / DeepSeek（通过 relay）| ⚠️ 仅 Anthropic | ✅ 一份 CLI 同时跑 Anthropic / OpenAI / 任意 OpenAI 兼容 relay |
+| 看 model 列表 | ❌ 写死，relay 上的新 model 看不见 | ✅ 从 runtime registry 实时拉取，按 vendor 分组 |
+| 用 `/effort` 切档 | ❌ 一刀切 | ✅ per-model schema，每个 model 只暴露它支持的档位 |
+| 排查 OpenAI relay 问题 | ❌ 报错就死 | ✅ 自愈式 adapter（修孤儿 `tool_calls` / 并发 `tool_calls` / 真 token usage）+ `/diagnose-relay` 探针 |
+| 知道为啥这个请求路由到那个 model | ❌ 黑盒 | ✅ `/why-this-model` 直接告诉你 |
+| 自动检查更新 | ❌ 没有 | ✅ `/update` 直接打 npm registry |
+| 看花了多少钱 | ⚠️ 非 Anthropic 模型按 Opus 价错算 ~67× | ✅ 按真实 vendor 价计费（修了 upstream 的 dead-code bug）|
+| 看库里 logo 三分 | ❌ 没有 | ✅ `/curry` 100 帧 drawille 火柴人动画 |
 
 ## ✨ Highlights / 核心特性
 
