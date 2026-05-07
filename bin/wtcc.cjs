@@ -49,26 +49,6 @@ function bail() {
   process.exit(1);
 }
 
-function getBunVersion(bunPath) {
-  const r = spawnSync(bunPath, ['--version'], { encoding: 'utf8' });
-  if (r.status !== 0 || !r.stdout) return null;
-  const m = r.stdout.trim().match(/^(\d+)\.(\d+)\.(\d+)/);
-  if (!m) return null;
-  return { major: +m[1], minor: +m[2], patch: +m[3], raw: r.stdout.trim() };
-}
-
-function bailVersion(version) {
-  process.stderr.write(
-    `wtcc requires Bun >= 1.3 (you have ${version.raw}).\n` +
-      `wtcc uses bun:bundle for compile-time feature flags, which is only available in Bun 1.3+.\n` +
-      '\n' +
-      'Upgrade Bun:\n' +
-      '  macOS / Linux: curl -fsSL https://bun.sh/install | bash\n' +
-      '  Windows PowerShell: powershell -c "irm bun.sh/install.ps1 | iex"\n',
-  );
-  process.exit(1);
-}
-
 function main() {
   if (!fs.existsSync(ENTRY)) {
     process.stderr.write(`wtcc: entrypoint missing at ${ENTRY}\n`);
@@ -76,13 +56,6 @@ function main() {
   }
   const bun = findBun();
   if (!bun) bail();
-
-  // Hard fail on Bun < 1.3 — older versions don't have bun:bundle, so import in
-  // src/entrypoints/cli.tsx breaks with a confusing "Cannot find package 'bundle'"
-  const version = getBunVersion(bun);
-  if (version && (version.major < 1 || (version.major === 1 && version.minor < 3))) {
-    bailVersion(version);
-  }
 
   const args = ['run', ENTRY, ...process.argv.slice(2)];
   const r = spawnSync(bun, args, { stdio: 'inherit' });
