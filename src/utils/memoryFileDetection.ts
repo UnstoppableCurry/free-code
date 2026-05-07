@@ -1,4 +1,4 @@
-import { feature } from 'bun:bundle'
+import { feature } from 'src/utils/featureFlag.js'
 import { normalize, posix, win32 } from 'path'
 import {
   getAutoMemPath,

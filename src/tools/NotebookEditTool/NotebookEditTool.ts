@@ -1,4 +1,4 @@
-import { feature } from 'bun:bundle'
+import { feature } from 'src/utils/featureFlag.js'
 import { extname, isAbsolute, resolve } from 'path'
 import {
   fileHistoryEnabled,

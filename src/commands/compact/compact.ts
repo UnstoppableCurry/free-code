@@ -1,4 +1,4 @@
-import { feature } from 'bun:bundle'
+import { feature } from 'src/utils/featureFlag.js'
 import { tError } from '../../i18n/errors.js'
 import chalk from 'chalk'
 import { markPostCompaction } from 'src/bootstrap/state.js'

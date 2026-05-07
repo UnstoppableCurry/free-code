@@ -1,4 +1,4 @@
-import { feature } from 'bun:bundle'
+import { feature } from 'src/utils/featureFlag.js'
 import { translations } from '../i18n/locales/index.js'
 import { createTranslator, resolveLocaleFromEnv } from '../i18n/translator.js'
 import { z } from 'zod/v4'

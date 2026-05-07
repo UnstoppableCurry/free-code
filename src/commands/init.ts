@@ -1,4 +1,4 @@
-import { feature } from 'bun:bundle'
+import { feature } from 'src/utils/featureFlag.js'
 import type { Command } from '../commands.js'
 import { translations } from '../i18n/locales/index.js'
 import {

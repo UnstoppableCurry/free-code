@@ -16,7 +16,7 @@
 // list when the actual OpenAI implementation lands; until then the env var
 // is the only path that lights it up.
 
-import { feature } from 'bun:bundle'
+import { feature } from 'src/utils/featureFlag.js'
 import { isEnvTruthy } from '../../utils/envUtils.js'
 
 export function isMultiProviderNormalizedEnabled(): boolean {

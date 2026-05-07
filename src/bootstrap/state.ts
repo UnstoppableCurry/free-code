@@ -1756,3 +1756,10 @@ export function setPromptId(id: string | null): void {
   STATE.promptId = id
 }
 
+// REPL bridge 状态查询。在 wtcc 的 ship-as-source 部署里 bridge 默认不启用 ——
+// 上游 paoloanzn/free-code 漏了 export 这个函数（SendMessageTool / ToolSearchTool
+// 直接从这里 import），补一个永远返回 false 的 stub 修通 ESM 校验。
+export function isReplBridgeActive(): boolean {
+  return false
+}
+
