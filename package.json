@@ -1,6 +1,6 @@
 {
   "name": "@unstoppablecurry/wtcc",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "wtcc — Claude Code Chinese fork: multi-provider AI coding CLI (Anthropic + OpenAI relay) with zh-CN i18n, dynamic /model menu, per-model /effort routing.",
   "license": "ISC",
   "author": "UnstoppableCurry",
@@ -45,7 +45,8 @@
     "src/",
     "scripts/build.ts",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "tsconfig.json"
   ],
   "scripts": {
     "build": "bun run ./scripts/build.ts",
@@ -59,19 +60,15 @@
   },
   "dependencies": {
     "@alcalzone/ansi-tokenize": "^0.3.0",
-    "@anthropic-ai/bedrock-sdk": "^0.26.4",
     "@anthropic-ai/claude-agent-sdk": "^0.2.87",
-    "@anthropic-ai/foundry-sdk": "^0.2.3",
     "@anthropic-ai/mcpb": "^2.1.2",
     "@anthropic-ai/sandbox-runtime": "^0.0.44",
     "@anthropic-ai/sdk": "^0.80.0",
-    "@anthropic-ai/vertex-sdk": "^0.14.4",
     "@aws-sdk/client-bedrock": "^3.1020.0",
     "@aws-sdk/client-bedrock-runtime": "^3.1020.0",
     "@aws-sdk/client-sts": "^3.1020.0",
     "@aws-sdk/credential-provider-node": "^3.972.28",
     "@aws-sdk/credential-providers": "^3.1020.0",
-    "@azure/identity": "^4.13.1",
     "@commander-js/extra-typings": "^14.0.0",
     "@growthbook/growthbook": "^1.6.5",
     "@modelcontextprotocol/sdk": "^1.29.0",
@@ -133,7 +130,6 @@
     "react": "^19.2.4",
     "react-reconciler": "^0.33.0",
     "semver": "^7.7.4",
-    "sharp": "^0.34.5",
     "shell-quote": "^1.8.3",
     "signal-exit": "^4.1.0",
     "stack-utils": "^2.0.6",

@@ -196,36 +196,6 @@ export async function getAnthropicClient({
     // we have always been lying about the return type - this doesn't support batching or models
     return new AnthropicBedrock(bedrockArgs) as unknown as Anthropic
   }
-  if (isEnvTruthy(process.env.CLAUDE_CODE_USE_FOUNDRY)) {
-    const { AnthropicFoundry } = await import('@anthropic-ai/foundry-sdk')
-    // Determine Azure AD token provider based on configuration
-    // SDK reads ANTHROPIC_FOUNDRY_API_KEY by default
-    let azureADTokenProvider: (() => Promise<string>) | undefined
-    if (!process.env.ANTHROPIC_FOUNDRY_API_KEY) {
-      if (isEnvTruthy(process.env.CLAUDE_CODE_SKIP_FOUNDRY_AUTH)) {
-        // Mock token provider for testing/proxy scenarios (similar to Vertex mock GoogleAuth)
-        azureADTokenProvider = () => Promise.resolve('')
-      } else {
-        // Use real Azure AD authentication with DefaultAzureCredential
-        const {
-          DefaultAzureCredential: AzureCredential,
-          getBearerTokenProvider,
-        } = await import('@azure/identity')
-        azureADTokenProvider = getBearerTokenProvider(
-          new AzureCredential(),
-          'https://cognitiveservices.azure.com/.default',
-        )
-      }
-    }
-
-    const foundryArgs: ConstructorParameters<typeof AnthropicFoundry>[0] = {
-      ...ARGS,
-      ...(azureADTokenProvider && { azureADTokenProvider }),
-      ...(isDebugToStdErr() && { logger: createStderrLogger() }),
-    }
-    // we have always been lying about the return type - this doesn't support batching or models
-    return new AnthropicFoundry(foundryArgs) as unknown as Anthropic
-  }
   if (isEnvTruthy(process.env.CLAUDE_CODE_USE_VERTEX)) {
     // Refresh GCP credentials if gcpAuthRefresh is configured and credentials are expired
     // This is similar to how we handle AWS credential refresh for Bedrock
