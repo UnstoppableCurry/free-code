@@ -1,6 +1,6 @@
 {
   "name": "@unstoppablecurry/wtcc",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "wtcc — Claude Code Chinese fork: multi-provider AI coding CLI (Anthropic + OpenAI relay) with zh-CN i18n, dynamic /model menu, per-model /effort routing.",
   "license": "ISC",
   "author": "UnstoppableCurry",
