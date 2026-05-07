@@ -26,7 +26,7 @@ VM 里现已自动从 `/etc/profile.d/claude-code.sh` 拿到 `ANTHROPIC_AUTH_TOK
 | 项 | 测什么 | 期望 |
 |---|---|---|
 | **xhigh thinking budget** | `/effort xhigh` + opus-4-7 + 长任务 | thinking 阶段 latency 比 high 长一截，wire request 含 `thinking.budget_tokens=32768` |
-| **Codex `/fast` 注入** | `WTCC_OPENAI_FAST=1` + 不走 relay + `FREE_CODE_DEBUG_OPENAI=2` | `/tmp/free-code-openai.log` grep 出 `"service_tier":"fast"` |
+| **Codex `/fast` 注入** | `WTCC_OPENAI_FAST=1` + 不走 relay + `FREE_CODE_DEBUG_OPENAI=2` | `/tmp/wtcc-openai.log` grep 出 `"service_tier":"fast"` |
 | **relay 双协议 roundtrip** | OpenAI 协议（默认）+ Anthropic 协议（`unset CLAUDE_CODE_USE_OPENAI`）各一个真问 | 两边都正常返回，无 401 / 无 schema 错 |
 | **cost-tracker 修复 e2e** | 切到 gemini-flash 跑几个 query，`/cost` 看花费 | 不再被错算成 Opus 5/25 per Mtok（应该 ~$0.30/$2.50） |
 

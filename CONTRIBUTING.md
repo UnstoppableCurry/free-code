@@ -1,6 +1,6 @@
 # Contributing to wtcc
 
-感谢愿意贡献。本项目是 [paoloanzn/free-code](https://github.com/paoloanzn/free-code) 的中文化 + 多 provider fork，核心约束是：**中文化质量是产品的一部分，不只是翻译**。
+感谢愿意贡献。本项目是 Claude Code 的中文化 + 多 provider 增强开源构建，核心约束是：**中文化质量是产品的一部分，不只是翻译**。
 
 ---
 

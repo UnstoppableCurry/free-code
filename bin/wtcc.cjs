@@ -43,7 +43,7 @@ function bail() {
     '\n' +
     'Then make sure `bun` is on your PATH (usually ~/.bun/bin) and re-run `wtcc`.\n' +
     '\n' +
-    'Docs: https://bun.sh  |  https://github.com/UnstoppableCurry/free-code\n';
+    'Docs: https://bun.sh  |  https://github.com/UnstoppableCurry/wtcc\n';
   process.stderr.write(msg);
   process.exit(1);
 }

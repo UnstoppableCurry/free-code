@@ -262,7 +262,7 @@ export async function* queryModelOpenAI(
     ? (msg: string) => {
         try {
           require('node:fs').appendFileSync(
-            '/tmp/free-code-openai.log',
+            '/tmp/wtcc-openai.log',
             `[${new Date().toISOString()}] ${msg}\n`,
           )
         } catch {}

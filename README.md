@@ -8,22 +8,24 @@
 [![GitHub stars](https://img.shields.io/github/stars/UnstoppableCurry/wtcc?style=social)](https://github.com/UnstoppableCurry/wtcc)
 [![Runtime: Bun](https://img.shields.io/badge/runtime-bun-orange)](https://bun.sh)
 
-`wtcc`（"WT Claude Code" 的缩写）是 **Claude Code 中文版** —— 基于 [paoloanzn/free-code](https://github.com/paoloanzn/free-code)（可自行编译的 Claude Code 源码 fork）**深度增强**而来，专攻中文用户和多 provider 场景。一句话定位：**一个 CLI 同时讲中文、同时调 Claude / GPT / Gemini / DeepSeek / Kimi / GLM / Qwen，并按 model 能力自动路由。**
+`wtcc`（"WT Claude Code" 的缩写）是 **更强的 Claude Code 开源构建** —— 基于公开可见的 Claude Code 源码深度增强，专攻中文用户和多 provider 场景。一句话定位：**一个 CLI 同时讲中文、同时调 Claude / GPT / Gemini / DeepSeek / Kimi / GLM / Qwen，并按 model 能力自动路由。**
 
-> 关键词（SEO）：Claude Code 中文版 · Claude Code Chinese fork · multi-provider AI CLI · OpenAI Anthropic relay CLI · self-hosted Claude Code · 自建 Claude Code · AI coding assistant 中文。
+> 关键词（SEO）：Claude Code 中文版 · Claude Code Chinese · multi-provider AI CLI · OpenAI Anthropic relay CLI · self-hosted Claude Code · 自建 Claude Code · AI coding assistant 中文。
 
-## 🚀 为什么用 wtcc 而不是 free-code？
+## 🚀 为什么用 wtcc 而不是官方 Claude Code (cc)？
 
-| 你想干的事 | upstream `free-code` | **`wtcc`（这个项目）** |
+| 你想干的事 | 官方 Claude Code | **`wtcc`（这个项目）** |
 |---|---|---|
-| 用中文 CLI 干活 | ❌ 全英文 | ✅ banner / 命令 / 错误提示 / 日志全中文，~378 个 i18n key |
-| 用 GPT / Gemini / DeepSeek（通过 relay）| ⚠️ 仅 Anthropic | ✅ 一份 CLI 同时跑 Anthropic / OpenAI / 任意 OpenAI 兼容 relay |
-| 看 model 列表 | ❌ 写死，relay 上的新 model 看不见 | ✅ 从 runtime registry 实时拉取，按 vendor 分组 |
-| 用 `/effort` 切档 | ❌ 一刀切 | ✅ per-model schema，每个 model 只暴露它支持的档位 |
-| 排查 OpenAI relay 问题 | ❌ 报错就死 | ✅ 自愈式 adapter（修孤儿 `tool_calls` / 并发 `tool_calls` / 真 token usage）+ `/diagnose-relay` 探针 |
-| 知道为啥这个请求路由到那个 model | ❌ 黑盒 | ✅ `/why-this-model` 直接告诉你 |
-| 自动检查更新 | ❌ 没有 | ✅ `/update` 直接打 npm registry |
-| 看花了多少钱 | ⚠️ 非 Anthropic 模型按 Opus 价错算 ~67× | ✅ 按真实 vendor 价计费（修了 upstream 的 dead-code bug）|
+| 用中文 CLI 干活 | ❌ 全英文，没 i18n | ✅ banner / 命令 / 错误提示 / 日志全中文，~378 个 i18n key |
+| 用 GPT / Gemini / DeepSeek（通过 OpenAI 协议 relay）| ❌ 只能调 Anthropic | ✅ 一份 CLI 同时跑 Anthropic / OpenAI / 任意 OpenAI 兼容 relay |
+| 看 model 列表 | ❌ 硬编码在源码里，新 model 看不见 | ✅ 从 runtime registry 实时拉取，按 vendor 分组 |
+| 用 `/effort` 切档 | ❌ 固定档位，不区分 model | ✅ per-model schema，每个 model 只暴露它支持的档位（含 opus-4-7 专属 `xhigh`，32k thinking budget） |
+| 排查 relay / OpenAI 协议问题 | ❌ 完全没设计这条路径 | ✅ 自愈式 adapter（修孤儿 `tool_calls` / 并发 `tool_calls` / 真 token usage）+ `/diagnose-relay` 探针 |
+| 知道为啥这个请求路由到那个 model | ❌ 黑盒 | ✅ `/why-this-model` 直接告诉你路由原因 |
+| 自动检查更新 | ⚠️ 仅 Anthropic 自家发版渠道 | ✅ `/update` 直接打 npm registry |
+| 看花了多少钱 | ⚠️ 非 Anthropic 模型估价不准 | ✅ 按真实 vendor 价计费 |
+| 隐私 / 离线友好 | ❌ OTel + GrowthBook 持续上报 | ✅ 全部 telemetry 剥离，零回家请求 |
+| 自己改源码 | ❌ 闭源（仅靠 source map 泄漏可窥探） | ✅ 全开源，TypeScript 源码直接 `bun run dev` |
 | 看库里 logo 三分 | ❌ 没有 | ✅ `/curry` 100 帧 drawille 火柴人动画 |
 
 ## ✨ Highlights / 核心特性
@@ -34,7 +36,7 @@
 - ✨ **per-model `/effort` schema**：每个 model 只暴露它真正支持的 effort 档位（`low | medium | high | max`）
 - ✨ **自愈式 OpenAI adapter**：自动修复孤儿 `tool_calls`、并发 `tool_calls`、上报真实 token usage
 - ✨ **`/why-this-model` 路由解释**：告诉你为什么这次请求被发到了这个 model
-- ✨ **Telemetry 全部移除**：继承自 free-code，无任何 OpenTelemetry / GrowthBook 回家请求
+- ✨ **Telemetry 全部移除**：无任何 OpenTelemetry / GrowthBook 回家请求
 
 ---
 
@@ -168,18 +170,18 @@ wtcc --model claude-opus-4-7
 
 ---
 
-## 🆚 Differences vs upstream / 与上游 free-code 的差异
+## 🆚 Differences vs Claude Code / 与官方 Claude Code 的差异
 
-继承自 `paoloanzn/free-code` 的同时，wtcc 改了什么：
-
-| 维度 | upstream Claude Code | free-code | wtcc |
-|---|---|---|---|
-| Provider | 仅 Anthropic | 仅 Anthropic | **多 provider，OpenAI 优先** |
-| 语言 | 英文 | 英文 | **中英双语**（`FREE_CODE_LANG`） |
-| Model 菜单 | 写死 | 写死 | **runtime registry 动态生成** |
-| `/effort` | 固定 schema | 固定 schema | **per-model schema** |
-| Telemetry | OTel + GrowthBook | 已剥离 | 已剥离 |
-| 源码 | 闭源（靠 source map 泄漏） | 开源可编译 | 开源可编译 + 中文化 |
+| 维度 | 官方 Claude Code | **wtcc** |
+|---|---|---|
+| Provider | 仅 Anthropic | **多 provider，OpenAI 协议优先** |
+| 语言 | 英文 | **中英双语** |
+| Model 菜单 | 写死在源码 | **runtime registry 动态生成** |
+| `/effort` | 固定 schema | **per-model schema**（含 opus-4-7 专属 `xhigh`）|
+| Telemetry | OTel + GrowthBook | **已全部剥离** |
+| 源码 | 闭源（仅 source map 泄漏可窥探） | **完整开源 TypeScript** |
+| 自更新 | Anthropic 自家发版渠道 | **`/update` 走 npm registry** |
+| 中文化深度 | 无 | **~378 个 i18n key，permissions 对话框 / `/effort` UI / 错误消息全中文** |
 
 ---
 
@@ -221,7 +223,7 @@ ISC. 上游 Claude Code 源码版权属于 Anthropic；本 fork 只使用通过 
 
 ## English summary
 
-`wtcc` is a **Claude Code Chinese fork** built on top of [paoloanzn/free-code](https://github.com/paoloanzn/free-code). It adds:
+`wtcc` is an **enhanced open-source build of Claude Code** with native Chinese support and multi-provider routing. Built on the publicly inspectable Claude Code source. It adds:
 
 - Native Chinese (zh-CN) localisation across UI, slash commands, and errors
 - A multi-provider AI CLI layer that lets one binary talk to Anthropic, OpenAI, and any OpenAI-compatible relay
