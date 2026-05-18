@@ -215,6 +215,19 @@ bun run build           # 产出 ./cli
 
 ---
 
+## 👥 Authors & Credits
+
+按贡献顺序（与项目演进相关性）：
+
+1. **Maintainer**: [@UnstoppableCurry](https://github.com/UnstoppableCurry) — 当前作者与发版人，v0.1.0 起的所有 npm 发布、i18n 体系、多 provider 路由、自愈 adapter、`/diagnose-relay`、`/why-this-model`、`/curry` 等增强均出自本仓库 main 分支的 13+ 直接 commits
+2. **AI Pair Programmer**: [Claude (Anthropic)](https://www.anthropic.com/claude) — v0.1.x 期间 34 次 `Co-Authored-By` 记录的 AI 协作
+3. **Upstream**: forked from [@paoloanzn / free-code](https://github.com/paoloanzn/free-code) — 提供初始 Bun-based Claude Code CLI 框架
+4. **Other contributors**: 见 [GitHub contributors graph](https://github.com/UnstoppableCurry/wtcc/graphs/contributors)
+
+> 注：GitHub Contributors 侧栏自动按 main 分支 commit 总数排序（含 upstream 继承的 40+ 历史 commits），与本节"按当前演进相关性"的排序不同。两者都属实。
+
+---
+
 ## 📜 License
 
 ISC. 上游 Claude Code 源码版权属于 Anthropic；本 fork 只使用通过 npm 公开分发的代码。请自行评估使用风险。
